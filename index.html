@@ -29,19 +29,13 @@ html, body {
     cursor: pointer;
 }
 
-.fullscreen-container {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-}
-
-#gameContainer {
+iframe {
     position: absolute;
     top: 0;
     left: 50%;
     width: 1600px;
     height: 900px;
+    border: none;
     transform-origin: top center;
 }
 </style>
@@ -51,25 +45,12 @@ html, body {
 
 <button id="fullscreenBtn">⛶</button>
 
-<div class="fullscreen-container">
-    <div id="gameContainer"></div>
-</div>
-
-<!-- Carica CSS e JS del gioco -->
-<link rel="stylesheet" href="gioco/style.css">
-<script src="gioco/script.js"></script>
+<iframe id="gameFrame" src="gioco/index.html"></iframe>
 
 <script>
-// Carica il contenuto HTML del gioco
-fetch("gioco/index.html")
-  .then(r => r.text())
-  .then(html => {
-      document.getElementById("gameContainer").innerHTML = html;
-  });
-
 // Scaling automatico
 function applyScaling() {
-    const frame = document.getElementById("gameContainer");
+    const frame = document.getElementById("gameFrame");
     const vw = window.innerWidth;
     const vh = window.innerHeight;
 
