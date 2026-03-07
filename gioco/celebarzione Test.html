@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<title>Test Celebrazione Cinematografica</title>
+<style>
+  body {
+    margin: 0;
+    background: #f0f0f0;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  button {
+    padding: 14px 24px;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  /* Overlay */
+  #celebrationOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.2s ease-out;
+  }
+
+  #celebrationContent {
+    text-align: center;
+    opacity: 0;
+    transform: scale(0.1);
+    animation-fill-mode: forwards;
+  }
+
+  @keyframes zoomInBounce {
+    0%   { transform: scale(0.1); opacity: 0; }
+    50%  { transform: scale(1.10); opacity: 1; }
+    70%  { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+
+  .celebrationTitle {
+    font-size: 60px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 20px;
+  }
+
+  .celebrationImage {
+    width: 260px;
+    height: auto;
+    margin-bottom: 20px;
+  }
+
+  /* Stelle */
+  .star {
+    position: fixed;
+    font-size: 38px;
+    pointer-events: none;
+    user-select: none;
+  }
+</style>
+</head>
+<body>
+
+<button onclick="celebrateWithImage()">Avvia Celebrazione</button>
+
+<div id="celebrationOverlay">
+  <div id="celebrationContent">
+    <div class="celebrationTitle">COMPLIMENTI!</div>
+    <img class="celebrationImage" src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Anonymous_emblem.svg/240px-Anonymous_emblem.svg.png" />
+  </div>
+</div>
+
+<script>
+
+function spawnStars(amount = 40) {
+  return new Promise(resolve => {
+    let created = 0;
+    for (let i = 0; i < amount; i++) {
+      const star = document.createElement("div");
+      star.classList.add("star");
+      star.textContent = "✨";
+
+      const x = Math.random() * window.innerWidth;
+      const y = Math.random() * window.innerHeight;
+      star.style.left = `${x}px`;
+      star.style.top = `${y}px`;
+
+      const duration = 5500 + Math.random() * 2000;
+      star.style.transition = `transform ${duration}ms linear, opacity ${duration}ms linear`;
+
+      document.body.appendChild(star);
+
+      setTimeout(() => {
+        star.style.transform = `translateY(-150px) scale(0.2)`;
+        star.style.opacity = 0;
+      }, 20);
+
+      setTimeout(() => {
+        star.remove();
+        created++;
+        if (created === amount) resolve();
+      }, duration + 100);
+    }
+  });
+}
+
+async function celebrateWithImage() {
+  const overlay = document.getElementById("celebrationOverlay");
+  const content = document.getElementById("celebrationContent");
+
+  overlay.style.opacity = 1;
+  overlay.style.pointerEvents = "auto";
+
+  content.style.animation = "zoomInBounce 1.8s ease-out forwards";
+
+  await spawnStars(55);
+
+  await new Promise(res => setTimeout(res, 1500));
+
+  overlay.style.opacity = 0;
+  overlay.style.pointerEvents = "none";
+}
+
+</script>
+</body>
+</html>
