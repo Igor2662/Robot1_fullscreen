@@ -44,6 +44,8 @@ h1{margin:18px;text-align:center}
 .icon-seq-block, .seq-block { width:60px; height:85px; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:#fff; border:1px solid #d0d0d0; position:relative; }
 .icon-seq-block .icon{ font-size:32px; }
 .icon-seq-block input{ width:48px; text-align:center; margin-top:6px; }
+.icon-seq-block input { font-size: 20px; }
+
 .icon-seq-block .remove{ position:absolute; top:-10px; right:-10px; background:#d32f2f; color:#fff; width:22px; height:22px; border-radius:50%; border:0; }
 
 /* buttons and misc */
