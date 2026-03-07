@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Robot Fullscreen</title>
 
 <style>
@@ -15,19 +15,39 @@ html, body {
     overflow: hidden;
 }
 
+/* 🔍 DEBUG — disattivato di default */
+#deviceTest {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.75);
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-family: sans-serif;
+    font-size: 14px;
+    z-index: 9999;
+    text-align: center;
+    display: none; /* ← disattiva debug */
+    /* display: block; */ /* ← ATTIVA debug */
+}
+
 /* Bottone fullscreen */
 #fullscreenBtn {
     position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 999999; /* molto più alto */
-    padding: 14px 18px;
-    font-size: 26px; /* più grande per tablet */
-    background: rgba(0,0,0,0.7);
+    top: 15px;
+    right: 15px;
+    z-index: 99999;
+    padding: 12px 16px;
+    font-size: 26px;
+    border: none;
     border-radius: 12px;
-    touch-action: manipulation; /* fondamentale per tablet */
+    background: rgba(0,0,0,0.7);
+    color: white;
+    cursor: pointer;
+    touch-action: manipulation;
 }
-
 
 /* Contenitore che gestisce lo scaling */
 #frameWrapper {
@@ -39,7 +59,7 @@ html, body {
     transform-origin: top center;
 }
 
-/* L’iframe contiene il gioco completo */
+/* Iframe del gioco */
 #gameFrame {
     width: 1600px;
     height: 900px;
@@ -50,6 +70,9 @@ html, body {
 
 <body>
 
+<!-- DEBUG -->
+<div id="deviceTest"></div>
+
 <!-- Bottone fullscreen -->
 <button id="fullscreenBtn">⛶</button>
 
@@ -59,24 +82,102 @@ html, body {
 </div>
 
 <script>
-// SCALING AUTOMATICO
 function applyScaling() {
+
     const wrapper = document.getElementById("frameWrapper");
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    const testBox = document.getElementById("deviceTest");
 
-    const baseW = 1600;
-    const baseH = 900;
+    const realWidth = screen.width;
+    const realHeight = screen.height;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
 
-    const scale = Math.min(vw / baseW, vh / baseH);
+    const minSide = Math.min(realWidth, realHeight);
+    const dpr = window.devicePixelRatio;
+    const isPortrait = realHeight > realWidth;
 
-    wrapper.style.transform = `translateX(-50%) scale(${scale})`;
+    /* 🎯 SCALING PERSONALIZZATO PER IL TUO GIOCO (1600×900) */
+
+    const scaleCellPortraitX = 0.22;
+    const scaleCellPortraitY = 0.22;
+
+    const scaleCellLandscapeX = 0.40;
+    const scaleCellLandscapeY = 0.40;
+
+    const scaleTabletPortraitX = 0.50;
+    const scaleTabletPortraitY = 0.50;
+
+    const scaleTabletLandscapeX = 0.75;
+    const scaleTabletLandscapeY = 0.75;
+
+    const scalePCX = 0.80;
+    const scalePCY = 0.80;
+
+    /* SOGLIE DI RICONOSCIMENTO */
+
+    const isSmartphone = (minSide <= 500 && dpr >= 2);
+    const isTablet = (minSide <= 1100 && dpr >= 1.5);
+    const isPC = (!isSmartphone && !isTablet);
+
+    let scaleX;
+    let scaleY;
+    let deviceType;
+
+    if (isSmartphone) {
+
+        deviceType = isPortrait ? "📱 Cell verticale" : "📱 Cell orizzontale";
+
+        if (isPortrait) {
+            scaleX = scaleCellPortraitX;
+            scaleY = scaleCellPortraitY;
+        } else {
+            scaleX = scaleCellLandscapeX;
+            scaleY = scaleCellLandscapeY;
+        }
+    }
+
+    else if (isTablet) {
+
+        deviceType = isPortrait ? "📲 Tablet verticale" : "📲 Tablet orizzontale";
+
+        if (isPortrait) {
+            scaleX = scaleTabletPortraitX;
+            scaleY = scaleTabletPortraitY;
+        } else {
+            scaleX = scaleTabletLandscapeX;
+            scaleY = scaleTabletLandscapeY;
+        }
+    }
+
+    else {
+
+        deviceType = "💻 PC";
+
+        scaleX = scalePCX;
+        scaleY = scalePCY;
+    }
+
+    /* APPLICAZIONE DELLO SCALING */
+
+    wrapper.style.transform = `translateX(-50%) scaleX(${scaleX}) scaleY(${scaleY})`;
+
+    /* DEBUG (attivalo togliendo display:none nel CSS) */
+
+    testBox.innerHTML = `
+        <strong>${deviceType}</strong><br>
+        scaleX: ${scaleX}<br>
+        scaleY: ${scaleY}<br>
+        minSide: ${minSide}px<br>
+        DPR: ${dpr}<br>
+        Schermo reale: ${realWidth} x ${realHeight}<br>
+        Viewport: ${viewportWidth} x ${viewportHeight}
+    `;
 }
 
 window.addEventListener("load", applyScaling);
 window.addEventListener("resize", applyScaling);
 
-// FULLSCREEN
+/* FULLSCREEN */
 const fullscreenBtn = document.getElementById("fullscreenBtn");
 
 fullscreenBtn.addEventListener("click", () => {
@@ -87,7 +188,7 @@ fullscreenBtn.addEventListener("click", () => {
     }
 });
 
-// Cambia icona quando si entra/esce dal fullscreen
+/* Cambia icona quando si entra/esce dal fullscreen */
 document.addEventListener("fullscreenchange", () => {
     fullscreenBtn.textContent = document.fullscreenElement ? "✕" : "⛶";
 });
