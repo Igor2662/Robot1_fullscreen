@@ -87,6 +87,9 @@ function applyScaling() {
     const wrapper = document.getElementById("frameWrapper");
     const testBox = document.getElementById("deviceTest");
 
+    /* 📌 Riconosce se siamo nella pagina fullscreen o dentro Google Sites */
+    const isFullscreenPage = window.location.pathname.endsWith("index.html");
+
     const realWidth = screen.width;
     const realHeight = screen.height;
     const viewportWidth = window.innerWidth;
@@ -98,23 +101,40 @@ function applyScaling() {
 
     /* 🎯 SCALING PERSONALIZZATO PER IL TUO GIOCO (1600×900) */
 
-    const scaleCellPortraitX = 0.22;
-    const scaleCellPortraitY = 0.22;
+    /* SMARTPHONE */
+    const scaleCellPortraitX_sites = 0.18;
+    const scaleCellPortraitY_sites = 0.18;
 
-    const scaleCellLandscapeX = 0.40;
-    const scaleCellLandscapeY = 0.40;
+    const scaleCellPortraitX_full = 0.22;
+    const scaleCellPortraitY_full = 0.22;
 
-    const scaleTabletPortraitX = 0.50;
-    const scaleTabletPortraitY = 0.50;
+    const scaleCellLandscapeX_sites = 0.32;
+    const scaleCellLandscapeY_sites = 0.32;
 
-    const scaleTabletLandscapeX = 0.75;
-    const scaleTabletLandscapeY = 0.75;
+    const scaleCellLandscapeX_full = 0.40;
+    const scaleCellLandscapeY_full = 0.40;
 
-    const scalePCX = 0.80;
-    const scalePCY = 0.80;
+    /* TABLET */
+    const scaleTabletPortraitX_sites = 0.40;
+    const scaleTabletPortraitY_sites = 0.40;
+
+    const scaleTabletPortraitX_full = 0.50;
+    const scaleTabletPortraitY_full = 0.50;
+
+    const scaleTabletLandscapeX_sites = 0.60;
+    const scaleTabletLandscapeY_sites = 0.60;
+
+    const scaleTabletLandscapeX_full = 0.75;
+    const scaleTabletLandscapeY_full = 0.75;
+
+    /* PC */
+    const scalePC_sites_X = 0.80;
+    const scalePC_sites_Y = 0.80;
+
+    const scalePC_full_X = 1.00;
+    const scalePC_full_Y = 1.00;
 
     /* SOGLIE DI RICONOSCIMENTO */
-
     const isSmartphone = (minSide <= 500 && dpr >= 2);
     const isTablet = (minSide <= 1100 && dpr >= 1.5);
     const isPC = (!isSmartphone && !isTablet);
@@ -123,48 +143,50 @@ function applyScaling() {
     let scaleY;
     let deviceType;
 
+    /* SMARTPHONE */
     if (isSmartphone) {
 
         deviceType = isPortrait ? "📱 Cell verticale" : "📱 Cell orizzontale";
 
         if (isPortrait) {
-            scaleX = scaleCellPortraitX;
-            scaleY = scaleCellPortraitY;
+            scaleX = isFullscreenPage ? scaleCellPortraitX_full : scaleCellPortraitX_sites;
+            scaleY = isFullscreenPage ? scaleCellPortraitY_full : scaleCellPortraitY_sites;
         } else {
-            scaleX = scaleCellLandscapeX;
-            scaleY = scaleCellLandscapeY;
+            scaleX = isFullscreenPage ? scaleCellLandscapeX_full : scaleCellLandscapeX_sites;
+            scaleY = isFullscreenPage ? scaleCellLandscapeY_full : scaleCellLandscapeY_sites;
         }
     }
 
+    /* TABLET */
     else if (isTablet) {
 
         deviceType = isPortrait ? "📲 Tablet verticale" : "📲 Tablet orizzontale";
 
         if (isPortrait) {
-            scaleX = scaleTabletPortraitX;
-            scaleY = scaleTabletPortraitY;
+            scaleX = isFullscreenPage ? scaleTabletPortraitX_full : scaleTabletPortraitX_sites;
+            scaleY = isFullscreenPage ? scaleTabletPortraitY_full : scaleTabletPortraitY_sites;
         } else {
-            scaleX = scaleTabletLandscapeX;
-            scaleY = scaleTabletLandscapeY;
+            scaleX = isFullscreenPage ? scaleTabletLandscapeX_full : scaleTabletLandscapeX_sites;
+            scaleY = isFullscreenPage ? scaleTabletLandscapeY_full : scaleTabletLandscapeY_sites;
         }
     }
 
+    /* PC */
     else {
 
         deviceType = "💻 PC";
 
-        scaleX = scalePCX;
-        scaleY = scalePCY;
+        scaleX = isFullscreenPage ? scalePC_full_X : scalePC_sites_X;
+        scaleY = isFullscreenPage ? scalePC_full_Y : scalePC_sites_Y;
     }
 
     /* APPLICAZIONE DELLO SCALING */
-
     wrapper.style.transform = `translateX(-50%) scaleX(${scaleX}) scaleY(${scaleY})`;
 
-    /* DEBUG (attivalo togliendo display:none nel CSS) */
-
+    /* DEBUG */
     testBox.innerHTML = `
         <strong>${deviceType}</strong><br>
+        Fullscreen page: ${isFullscreenPage}<br>
         scaleX: ${scaleX}<br>
         scaleY: ${scaleY}<br>
         minSide: ${minSide}px<br>
