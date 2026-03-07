@@ -400,10 +400,13 @@ function setupToolboxAndSequence() {
 
       // Input numerico
       const input = document.createElement('input');
-      input.type = 'number';
-      input.min = '0';
+      input.type = 'text';
+      input.inputMode = 'numeric';
+      input.pattern = '[0-9]*';
       input.value = '1';
+      input.classList.add('seq-input'); // opzionale per stile
       node.appendChild(input);
+
 
       // Pulsante X
       const rm = document.createElement('button');
@@ -961,11 +964,14 @@ function setupIconToolboxAndSequence(){
                           '⤴️';
       block.appendChild(ic);
 
-      const input = document.createElement('input'); 
-      input.type='number'; 
-      input.min='0'; 
-      input.value='1'; 
-      block.appendChild(input);
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.inputMode = 'numeric';
+      input.pattern = '[0-9]*';
+      input.value = '1';
+      input.classList.add('seq-input'); // opzionale per stile
+      node.appendChild(input);
+
 
       const rm = document.createElement('button'); 
       rm.className='remove'; 
