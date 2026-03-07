@@ -13,7 +13,6 @@ html, body {
     height: 100%;
     background: #000;
     overflow: hidden;
-    touch-action: none;
 }
 
 /* Bottone fullscreen */
@@ -29,25 +28,23 @@ html, body {
     background: rgba(0,0,0,0.6);
     color: white;
     cursor: pointer;
-    transition: 0.2s;
 }
 
-/* Contenitore fullscreen */
-.fullscreen-container {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-}
-
-/* Contenitore del gioco */
-#gameContainer {
+/* Contenitore che gestisce lo scaling */
+#frameWrapper {
     position: absolute;
     top: 0;
     left: 50%;
     width: 1600px;
     height: 900px;
     transform-origin: top center;
+}
+
+/* L’iframe contiene il gioco completo */
+#gameFrame {
+    width: 1600px;
+    height: 900px;
+    border: 0;
 }
 </style>
 </head>
@@ -57,26 +54,15 @@ html, body {
 <!-- Bottone fullscreen -->
 <button id="fullscreenBtn">⛶</button>
 
-<!-- Contenitore del gioco -->
-<div class="fullscreen-container">
-    <div id="gameContainer"></div>
+<!-- Contenitore con scaling -->
+<div id="frameWrapper">
+    <iframe id="gameFrame" src="gioco/index.html"></iframe>
 </div>
 
-<!-- Carica CSS e JS del gioco -->
-<link rel="stylesheet" href="gioco/style.css">
-<script src="gioco/script.js"></script>
-
 <script>
-// Inserisce l'HTML del gioco dentro gameContainer
-fetch("gioco/index.html")
-  .then(r => r.text())
-  .then(html => {
-      document.getElementById("gameContainer").innerHTML = html;
-  });
-
 // SCALING AUTOMATICO
 function applyScaling() {
-    const frame = document.getElementById("gameContainer");
+    const wrapper = document.getElementById("frameWrapper");
     const vw = window.innerWidth;
     const vh = window.innerHeight;
 
@@ -85,7 +71,7 @@ function applyScaling() {
 
     const scale = Math.min(vw / baseW, vh / baseH);
 
-    frame.style.transform = `translateX(-50%) scale(${scale})`;
+    wrapper.style.transform = `translateX(-50%) scale(${scale})`;
 }
 
 window.addEventListener("load", applyScaling);
@@ -94,15 +80,13 @@ window.addEventListener("resize", applyScaling);
 // FULLSCREEN
 const fullscreenBtn = document.getElementById("fullscreenBtn");
 
-function toggleFullscreen() {
+fullscreenBtn.addEventListener("click", () => {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen();
     } else {
         document.exitFullscreen();
     }
-}
-
-fullscreenBtn.addEventListener("click", toggleFullscreen);
+});
 
 // Cambia icona quando si entra/esce dal fullscreen
 document.addEventListener("fullscreenchange", () => {
