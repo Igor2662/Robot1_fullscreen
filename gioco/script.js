@@ -371,51 +371,62 @@ function setupToolboxAndSequence() {
   seq.innerHTML = '';
 
   Sortable.create(seq, {
-    group: { name: 'shared', pull: false, put: true },
-    animation: 150,
+      group: { name: 'shared', pull: false, put: true },
+      animation: 150,
+      removeOnSpill: true,
 
-    // 👇 QUESTA È LA CHIAVE: elimina gli elementi trascinati fuori
-    removeOnSpill: true,
+      // 👉 drag solo dall’icona
+      handle: '.icon',
 
-    onAdd(evt) {
-      const node = evt.item;
-      node.className = 'seq-block';
+      // 👉 gli input NON devono attivare il drag
+      filter: 'input, [data-no-drag="true"]',
+      onFilter(evt) {
+          if (evt.target.tagName === 'INPUT') {
+              evt.preventDefault();
+              evt.target.focus();
+          }
+      },
 
-      const action = node.dataset.action || node.getAttribute('data-action');
-      node.dataset.action = action;
-      node.innerHTML = '';
+      onAdd(evt) {
+          const node = evt.item;
+          node.className = 'seq-block';
 
-      // Icona
-      const ic = document.createElement('div');
-      ic.className = 'icon';
-      ic.innerHTML =
-        action === 'moveRight' ? '➡️' :
-        action === 'moveLeft' ? '⬅️' :
-        action === 'moveUp' ? '⬆️' :
-        action === 'moveDown' ? '⬇️' :
-        action === 'rotR' ? '↻<span class="small-text">D</span>' :
-        action === 'rotL' ? '↺<span class="small-text">S</span>' :
-        '⤴️';
-      node.appendChild(ic);
+          const action = node.dataset.action || node.getAttribute('data-action');
+          node.dataset.action = action;
+          node.innerHTML = '';
 
-      // Input numerico
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.inputMode = 'numeric';
-      input.pattern = '[0-9]*';
-      input.value = '1';
-      input.classList.add('seq-input'); // opzionale per stile
-      node.appendChild(input);
+          // Icona
+          const ic = document.createElement('div');
+          ic.className = 'icon';
+          ic.innerHTML =
+              action === 'moveRight' ? '➡️' :
+              action === 'moveLeft' ? '⬅️' :
+              action === 'moveUp' ? '⬆️' :
+              action === 'moveDown' ? '⬇️' :
+              action === 'rotR' ? '↻<span class="small-text">D</span>' :
+              action === 'rotL' ? '↺<span class="small-text">S</span>' :
+              '⤴️';
+          node.appendChild(ic);
 
+          // 👉 Input compatibile con Chrome tablet
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.inputMode = 'numeric';
+          input.pattern = '[0-9]*';
+          input.value = '1';
+          input.classList.add('seq-input');
+          input.setAttribute('data-no-drag', 'true');
+          node.appendChild(input);
 
-      // Pulsante X
-      const rm = document.createElement('button');
-      rm.className = 'remove';
-      rm.textContent = '✖';
-      rm.onclick = () => node.remove();
-      node.appendChild(rm);
-    }
+          // Pulsante X
+          const rm = document.createElement('button');
+          rm.className = 'remove';
+          rm.textContent = '✖';
+          rm.onclick = () => node.remove();
+          node.appendChild(rm);
+      }
   });
+
 }
 
 
@@ -938,50 +949,59 @@ function setupIconToolboxAndSequence(){
   seq.innerHTML='';
 
   Sortable.create(seq, {
-    group: { name: 'shared-icons', pull: false, put: true },
-    animation: 150,
+      group: { name: 'shared-icons', pull: false, put: true },
+      animation: 150,
+      removeOnSpill: true,
 
-    // 👇 ELIMINA AUTOMATICAMENTE SE TRASCINATO FUORI
-    removeOnSpill: true,
+      // 👉 drag solo dall’icona
+      handle: '.icon',
 
-    onAdd: function (evt){
-      const action = evt.item.dataset.action;
+      // 👉 input NON trascinabili
+      filter: 'input, [data-no-drag="true"]',
+      onFilter(evt) {
+          if (evt.target.tagName === 'INPUT') {
+              evt.preventDefault();
+              evt.target.focus();
+          }
+      },
 
-      // crea nuovo blocco
-      const block = document.createElement('div');
-      block.className = 'icon-seq-block';
-      block.dataset.action = action;
+      onAdd(evt) {
+          const action = evt.item.dataset.action;
 
-      const ic = document.createElement('div'); 
-      ic.className='icon';
-      ic.innerHTML = 
-        action === 'R'  ? '➡️' :
-        action === 'L'  ? '⬅️' :
-        action === 'U'  ? '⬆️' :
-        action === 'D'  ? '⬇️' :
-        action === 'RR' ? '↻<span class="small-text">D</span>' :
-        action === 'RL' ? '↺<span class="small-text">S</span>' :
-                          '⤴️';
-      block.appendChild(ic);
+          const block = document.createElement('div');
+          block.className = 'icon-seq-block';
+          block.dataset.action = action;
 
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.inputMode = 'numeric';
-      input.pattern = '[0-9]*';
-      input.value = '1';
-      input.classList.add('seq-input'); // opzionale per stile
-      node.appendChild(input);
+          const ic = document.createElement('div');
+          ic.className = 'icon';
+          ic.innerHTML =
+              action === 'R'  ? '➡️' :
+              action === 'L'  ? '⬅️' :
+              action === 'U'  ? '⬆️' :
+              action === 'D'  ? '⬇️' :
+              action === 'RR' ? '↻<span class="small-text">D</span>' :
+              action === 'RL' ? '↺<span class="small-text">S</span>' :
+                              '⤴️';
+          block.appendChild(ic);
 
+          // 👉 Input compatibile con Chrome tablet
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.inputMode = 'numeric';
+          input.pattern = '[0-9]*';
+          input.value = '1';
+          input.classList.add('seq-input');
+          input.setAttribute('data-no-drag', 'true');
+          block.appendChild(input);
 
-      const rm = document.createElement('button'); 
-      rm.className='remove'; 
-      rm.textContent='✖'; 
-      rm.onclick = ()=>block.remove(); 
-      block.appendChild(rm);
+          const rm = document.createElement('button');
+          rm.className = 'remove';
+          rm.textContent = '✖';
+          rm.onclick = () => block.remove();
+          block.appendChild(rm);
 
-      // sostituisce il clone con il blocco vero
-      evt.item.replaceWith(block);
-    }
+          evt.item.replaceWith(block);
+      }
   });
 }
 
