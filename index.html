@@ -18,17 +18,16 @@ html, body {
 /* Bottone fullscreen */
 #fullscreenBtn {
     position: fixed;
-    top: 15px;
-    right: 15px;
-    z-index: 9999;
-    padding: 10px 14px;
-    font-size: 22px;
-    border: none;
-    border-radius: 10px;
-    background: rgba(0,0,0,0.6);
-    color: white;
-    cursor: pointer;
+    top: 20px;
+    right: 20px;
+    z-index: 999999; /* molto più alto */
+    padding: 14px 18px;
+    font-size: 26px; /* più grande per tablet */
+    background: rgba(0,0,0,0.7);
+    border-radius: 12px;
+    touch-action: manipulation; /* fondamentale per tablet */
 }
+
 
 /* Contenitore che gestisce lo scaling */
 #frameWrapper {
