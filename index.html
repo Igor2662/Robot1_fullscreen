@@ -29,8 +29,7 @@ html, body {
     font-size: 14px;
     z-index: 9999;
     text-align: center;
-    display: none; /* ← disattiva debug */
-    /* display: block; */ /* ← ATTIVA debug */
+    display: none;
 }
 
 /* Bottone fullscreen */
@@ -70,25 +69,21 @@ html, body {
 
 <body>
 
-<!-- DEBUG -->
 <div id="deviceTest"></div>
 
-<!-- Bottone fullscreen -->
 <button id="fullscreenBtn">⛶</button>
 
-<!-- Contenitore con scaling -->
 <div id="frameWrapper">
     <iframe id="gameFrame" src="gioco/index.html"></iframe>
 </div>
 
 <script>
 function applyScaling() {
-
     const wrapper = document.getElementById("frameWrapper");
     const testBox = document.getElementById("deviceTest");
 
     /* 📌 Riconosce se siamo nella pagina fullscreen o dentro Google Sites */
-    const isFullscreenPage = window.self === window.top;
+    const isFullscreenPage = window.location.pathname.endsWith("index.html");
 
     const realWidth = screen.width;
     const realHeight = screen.height;
@@ -102,30 +97,18 @@ function applyScaling() {
     /* 🎯 SCALING PERSONALIZZATO PER IL TUO GIOCO (1600×900) */
 
     /* SMARTPHONE */
-    const scaleCellPortraitX_sites = 0.18;
-    const scaleCellPortraitY_sites = 0.18;
+    const scaleCellPortrait_sites = 0.18;
+    const scaleCellPortrait_full = 0.22;
 
-    const scaleCellPortraitX_full = 0.22;
-    const scaleCellPortraitY_full = 0.22;
-
-    const scaleCellLandscapeX_sites = 0.32;
-    const scaleCellLandscapeY_sites = 0.32;
-
-    const scaleCellLandscapeX_full = 0.40;
-    const scaleCellLandscapeY_full = 0.40;
+    const scaleCellLandscape_sites = 0.32;
+    const scaleCellLandscape_full = 0.40;
 
     /* TABLET */
-    const scaleTabletPortraitX_sites = 0.40;
-    const scaleTabletPortraitY_sites = 0.40;
+    const scaleTabletPortrait_sites = 0.40;
+    const scaleTabletPortrait_full = 0.50;
 
-    const scaleTabletPortraitX_full = 0.50;
-    const scaleTabletPortraitY_full = 0.50;
-
-    const scaleTabletLandscapeX_sites = 0.60;
-    const scaleTabletLandscapeY_sites = 0.60;
-
-    const scaleTabletLandscapeX_full = 0.75;
-    const scaleTabletLandscapeY_full = 0.75;
+    const scaleTabletLandscape_sites = 0.60;
+    const scaleTabletLandscape_full = 0.75;
 
     /* PC */
     const scalePC_sites_X = 0.80;
@@ -139,43 +122,28 @@ function applyScaling() {
     const isTablet = (minSide <= 1100 && dpr >= 1.5);
     const isPC = (!isSmartphone && !isTablet);
 
-    let scaleX;
-    let scaleY;
-    let deviceType;
+    let scaleX, scaleY, deviceType;
 
-    /* SMARTPHONE */
     if (isSmartphone) {
-
         deviceType = isPortrait ? "📱 Cell verticale" : "📱 Cell orizzontale";
-
         if (isPortrait) {
-            scaleX = isFullscreenPage ? scaleCellPortraitX_full : scaleCellPortraitX_sites;
-            scaleY = isFullscreenPage ? scaleCellPortraitY_full : scaleCellPortraitY_sites;
+            scaleX = isFullscreenPage ? scaleCellPortrait_full : scaleCellPortrait_sites;
+            scaleY = isFullscreenPage ? scaleCellPortrait_full : scaleCellPortrait_sites;
         } else {
-            scaleX = isFullscreenPage ? scaleCellLandscapeX_full : scaleCellLandscapeX_sites;
-            scaleY = isFullscreenPage ? scaleCellLandscapeY_full : scaleCellLandscapeY_sites;
+            scaleX = isFullscreenPage ? scaleCellLandscape_full : scaleCellLandscape_sites;
+            scaleY = isFullscreenPage ? scaleCellLandscape_full : scaleCellLandscape_sites;
         }
-    }
-
-    /* TABLET */
-    else if (isTablet) {
-
+    } else if (isTablet) {
         deviceType = isPortrait ? "📲 Tablet verticale" : "📲 Tablet orizzontale";
-
         if (isPortrait) {
-            scaleX = isFullscreenPage ? scaleTabletPortraitX_full : scaleTabletPortraitX_sites;
-            scaleY = isFullscreenPage ? scaleTabletPortraitY_full : scaleTabletPortraitY_sites;
+            scaleX = isFullscreenPage ? scaleTabletPortrait_full : scaleTabletPortrait_sites;
+            scaleY = isFullscreenPage ? scaleTabletPortrait_full : scaleTabletPortrait_sites;
         } else {
-            scaleX = isFullscreenPage ? scaleTabletLandscapeX_full : scaleTabletLandscapeX_sites;
-            scaleY = isFullscreenPage ? scaleTabletLandscapeY_full : scaleTabletLandscapeY_sites;
+            scaleX = isFullscreenPage ? scaleTabletLandscape_full : scaleTabletLandscape_sites;
+            scaleY = isFullscreenPage ? scaleTabletLandscape_full : scaleTabletLandscape_sites;
         }
-    }
-
-    /* PC */
-    else {
-
+    } else {
         deviceType = "💻 PC";
-
         scaleX = isFullscreenPage ? scalePC_full_X : scalePC_sites_X;
         scaleY = isFullscreenPage ? scalePC_full_Y : scalePC_sites_Y;
     }
@@ -183,7 +151,6 @@ function applyScaling() {
     /* APPLICAZIONE DELLO SCALING */
     wrapper.style.transform = `translateX(-50%) scaleX(${scaleX}) scaleY(${scaleY})`;
 
-    /* DEBUG */
     testBox.innerHTML = `
         <strong>${deviceType}</strong><br>
         Fullscreen page: ${isFullscreenPage}<br>
@@ -196,8 +163,16 @@ function applyScaling() {
     `;
 }
 
-window.addEventListener("load", applyScaling);
-window.addEventListener("resize", applyScaling);
+/* Forza scaling multiplo su mobile per garantire zoom corretto */
+function applyScalingWithDelay() {
+    applyScaling();
+    setTimeout(applyScaling, 200);
+    setTimeout(applyScaling, 500);
+    setTimeout(applyScaling, 1000);
+}
+
+window.addEventListener("load", applyScalingWithDelay);
+window.addEventListener("resize", applyScalingWithDelay);
 
 /* FULLSCREEN */
 const fullscreenBtn = document.getElementById("fullscreenBtn");
