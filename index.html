@@ -2,6 +2,8 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
+
+<!-- Zoom attivo ovunque -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
 
 <title>Robot Fullscreen</title>
@@ -16,7 +18,7 @@ html, body {
     overflow: hidden;
 }
 
-/* 🔍 DEBUG — disattivato di default */
+/* DEBUG (disattivato) */
 #deviceTest {
     position: fixed;
     top: 10px;
@@ -29,7 +31,6 @@ html, body {
     font-family: sans-serif;
     font-size: 14px;
     z-index: 9999;
-    text-align: center;
     display: none;
 }
 
@@ -46,10 +47,9 @@ html, body {
     background: rgba(0,0,0,0.7);
     color: white;
     cursor: pointer;
-    touch-action: manipulation;
 }
 
-/* Contenitore che gestisce lo scaling */
+/* Wrapper del gioco */
 #frameWrapper {
     position: absolute;
     top: 0;
@@ -65,6 +65,19 @@ html, body {
     height: 900px;
     border: 0;
 }
+
+/* FULLSCREEN SIMULATO */
+#fakeFullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: black;
+    z-index: 99998;
+    display: none;
+    overflow: hidden;
+}
 </style>
 </head>
 
@@ -74,17 +87,23 @@ html, body {
 
 <button id="fullscreenBtn">⛶</button>
 
+<!-- Contenitore fullscreen simulato -->
+<div id="fakeFullscreen"></div>
+
+<!-- Contenitore del gioco -->
 <div id="frameWrapper">
     <iframe id="gameFrame" src="gioco/index.html"></iframe>
 </div>
 
 <script>
+let isFakeFullscreen = false;
+
 function applyScaling() {
+
     const wrapper = document.getElementById("frameWrapper");
     const testBox = document.getElementById("deviceTest");
 
-    /* 📌 Riconosce se siamo nella pagina fullscreen o dentro Google Sites */
-    const isFullscreenPage = window.location.pathname.endsWith("index.html");
+    const isFullscreenPage = isFakeFullscreen;
 
     const realWidth = screen.width;
     const realHeight = screen.height;
@@ -95,21 +114,33 @@ function applyScaling() {
     const dpr = window.devicePixelRatio;
     const isPortrait = realHeight > realWidth;
 
-    /* 🎯 SCALING PERSONALIZZATO PER IL TUO GIOCO (1600×900) */
+    /* SCALING PERSONALIZZATO */
 
-    /* SMARTPHONE */
-    const scaleCellPortrait_sites = 0.18;
-    const scaleCellPortrait_full = 0.22;
+    /* Smartphone */
+    const scaleCellPortraitX_sites = 0.18;
+    const scaleCellPortraitY_sites = 0.18;
 
-    const scaleCellLandscape_sites = 0.32;
-    const scaleCellLandscape_full = 0.40;
+    const scaleCellPortraitX_full = 0.22;
+    const scaleCellPortraitY_full = 0.22;
 
-    /* TABLET */
-    const scaleTabletPortrait_sites = 0.40;
-    const scaleTabletPortrait_full = 0.50;
+    const scaleCellLandscapeX_sites = 0.32;
+    const scaleCellLandscapeY_sites = 0.32;
 
-    const scaleTabletLandscape_sites = 0.60;
-    const scaleTabletLandscape_full = 0.75;
+    const scaleCellLandscapeX_full = 0.40;
+    const scaleCellLandscapeY_full = 0.40;
+
+    /* Tablet */
+    const scaleTabletPortraitX_sites = 0.40;
+    const scaleTabletPortraitY_sites = 0.40;
+
+    const scaleTabletPortraitX_full = 0.50;
+    const scaleTabletPortraitY_full = 0.50;
+
+    const scaleTabletLandscapeX_sites = 0.60;
+    const scaleTabletLandscapeY_sites = 0.60;
+
+    const scaleTabletLandscapeX_full = 0.75;
+    const scaleTabletLandscapeY_full = 0.75;
 
     /* PC */
     const scalePC_sites_X = 0.80;
@@ -118,77 +149,89 @@ function applyScaling() {
     const scalePC_full_X = 1.00;
     const scalePC_full_Y = 1.00;
 
-    /* SOGLIE DI RICONOSCIMENTO */
+    /* RICONOSCIMENTO DISPOSITIVO */
     const isSmartphone = (minSide <= 500 && dpr >= 2);
     const isTablet = (minSide <= 1100 && dpr >= 1.5);
     const isPC = (!isSmartphone && !isTablet);
 
-    let scaleX, scaleY, deviceType;
+    let scaleX;
+    let scaleY;
+    let deviceType;
 
+    /* SMARTPHONE */
     if (isSmartphone) {
+
         deviceType = isPortrait ? "📱 Cell verticale" : "📱 Cell orizzontale";
+
         if (isPortrait) {
-            scaleX = isFullscreenPage ? scaleCellPortrait_full : scaleCellPortrait_sites;
-            scaleY = isFullscreenPage ? scaleCellPortrait_full : scaleCellPortrait_sites;
+            scaleX = isFullscreenPage ? scaleCellPortraitX_full : scaleCellPortraitX_sites;
+            scaleY = isFullscreenPage ? scaleCellPortraitY_full : scaleCellPortraitY_sites;
         } else {
-            scaleX = isFullscreenPage ? scaleCellLandscape_full : scaleCellLandscape_sites;
-            scaleY = isFullscreenPage ? scaleCellLandscape_full : scaleCellLandscape_sites;
+            scaleX = isFullscreenPage ? scaleCellLandscapeX_full : scaleCellLandscapeX_sites;
+            scaleY = isFullscreenPage ? scaleCellLandscapeY_full : scaleCellLandscapeY_sites;
         }
-    } else if (isTablet) {
+    }
+
+    /* TABLET */
+    else if (isTablet) {
+
         deviceType = isPortrait ? "📲 Tablet verticale" : "📲 Tablet orizzontale";
+
         if (isPortrait) {
-            scaleX = isFullscreenPage ? scaleTabletPortrait_full : scaleTabletPortrait_sites;
-            scaleY = isFullscreenPage ? scaleTabletPortrait_full : scaleTabletPortrait_sites;
+            scaleX = isFullscreenPage ? scaleTabletPortraitX_full : scaleTabletPortraitX_sites;
+            scaleY = isFullscreenPage ? scaleTabletPortraitY_full : scaleTabletPortraitY_sites;
         } else {
-            scaleX = isFullscreenPage ? scaleTabletLandscape_full : scaleTabletLandscape_sites;
-            scaleY = isFullscreenPage ? scaleTabletLandscape_full : scaleTabletLandscape_sites;
+            scaleX = isFullscreenPage ? scaleTabletLandscapeX_full : scaleTabletLandscapeX_sites;
+            scaleY = isFullscreenPage ? scaleTabletLandscapeY_full : scaleTabletLandscapeY_sites;
         }
-    } else {
+    }
+
+    /* PC */
+    else {
+
         deviceType = "💻 PC";
+
         scaleX = isFullscreenPage ? scalePC_full_X : scalePC_sites_X;
         scaleY = isFullscreenPage ? scalePC_full_Y : scalePC_sites_Y;
     }
 
-    /* APPLICAZIONE DELLO SCALING */
+    /* CENTRATURA STABILE */
+    wrapper.style.transformOrigin = "top center";
     wrapper.style.transform = `translateX(-50%) scaleX(${scaleX}) scaleY(${scaleY})`;
 
+    /* DEBUG */
     testBox.innerHTML = `
         <strong>${deviceType}</strong><br>
-        Fullscreen page: ${isFullscreenPage}<br>
+        Fullscreen simulato: ${isFullscreenPage}<br>
         scaleX: ${scaleX}<br>
         scaleY: ${scaleY}<br>
-        minSide: ${minSide}px<br>
-        DPR: ${dpr}<br>
-        Schermo reale: ${realWidth} x ${realHeight}<br>
-        Viewport: ${viewportWidth} x ${viewportHeight}
+        viewport: ${viewportWidth} x ${viewportHeight}
     `;
 }
 
-/* Forza scaling multiplo su mobile per garantire zoom corretto */
-function applyScalingWithDelay() {
-    applyScaling();
-    setTimeout(applyScaling, 200);
-    setTimeout(applyScaling, 500);
-    setTimeout(applyScaling, 1000);
-}
+window.addEventListener("load", applyScaling);
+window.addEventListener("resize", applyScaling);
 
-window.addEventListener("load", applyScalingWithDelay);
-window.addEventListener("resize", applyScalingWithDelay);
-
-/* FULLSCREEN */
+/* FULLSCREEN SIMULATO */
 const fullscreenBtn = document.getElementById("fullscreenBtn");
+const fakeFS = document.getElementById("fakeFullscreen");
+const wrapper = document.getElementById("frameWrapper");
 
 fullscreenBtn.addEventListener("click", () => {
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-    } else {
-        document.exitFullscreen();
-    }
-});
 
-/* Cambia icona quando si entra/esce dal fullscreen */
-document.addEventListener("fullscreenchange", () => {
-    fullscreenBtn.textContent = document.fullscreenElement ? "✕" : "⛶";
+    if (!isFakeFullscreen) {
+        fakeFS.style.display = "block";
+        fakeFS.appendChild(wrapper);
+        fullscreenBtn.textContent = "✕";
+        isFakeFullscreen = true;
+        applyScaling();
+    } else {
+        fakeFS.style.display = "none";
+        document.body.appendChild(wrapper);
+        fullscreenBtn.textContent = "⛶";
+        isFakeFullscreen = false;
+        applyScaling();
+    }
 });
 </script>
 
