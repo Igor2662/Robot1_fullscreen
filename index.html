@@ -88,7 +88,7 @@ function applyScaling() {
     const testBox = document.getElementById("deviceTest");
 
     /* 📌 Riconosce se siamo nella pagina fullscreen o dentro Google Sites */
-    const isFullscreenPage = window.location.pathname.endsWith("index.html");
+    const isFullscreenPage = window.self === window.top;
 
     const realWidth = screen.width;
     const realHeight = screen.height;
