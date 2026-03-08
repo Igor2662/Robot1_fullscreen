@@ -53,10 +53,10 @@ html, body {
 #frameWrapper {
     position: absolute;
     top: 0;
-    left: 70;
+    left: 50%; /* centratura stabile */
     width: 1600px;
     height: 900px;
-    /*transform-origin: top left;*/
+    transform-origin: top center; /* fondamentale */
 }
 
 /* Iframe del gioco */
@@ -180,19 +180,9 @@ function applyScaling() {
         scaleY = isFullscreenPage ? scalePC_full_Y : scalePC_sites_Y;
     }
 
-    /* 🎯 CENTRATURA PERFETTA CON SCALING SEPARATO */
-
-    const baseW = 1600;
-    const baseH = 900;
-
-    const scaledW = baseW * scaleX;
-    const scaledH = baseH * scaleY;
-
-    const leftOffset = (viewportWidth - scaledW) / 2;
-
-    wrapper.style.transformOrigin = "top left";
-    wrapper.style.transform = `scaleX(${scaleX}) scaleY(${scaleY})`;
-    wrapper.style.left = `${leftOffset}px`;
+    /* 🎯 CENTRATURA STABILE E PERFETTA */
+    wrapper.style.transformOrigin = "top center";
+    wrapper.style.transform = `translateX(-50%) scaleX(${scaleX}) scaleY(${scaleY})`;
 
     /* DEBUG */
     testBox.innerHTML = `
@@ -200,8 +190,6 @@ function applyScaling() {
         Fullscreen page: ${isFullscreenPage}<br>
         scaleX: ${scaleX}<br>
         scaleY: ${scaleY}<br>
-        scaledW: ${scaledW}<br>
-        leftOffset: ${leftOffset}<br>
         minSide: ${minSide}px<br>
         DPR: ${dpr}<br>
         Schermo reale: ${realWidth} x ${realHeight}<br>
