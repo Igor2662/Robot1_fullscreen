@@ -199,14 +199,6 @@ function applyScaling() {
     wrapper.style.transformOrigin = "top center";
     wrapper.style.transform = `translateX(-50%) scaleX(${scaleX}) scaleY(${scaleY})`;
 
-    /* DEBUG */
-    testBox.innerHTML = `
-        <strong>${deviceType}</strong><br>
-        Fullscreen simulato: ${isFullscreenPage}<br>
-        scaleX: ${scaleX}<br>
-        scaleY: ${scaleY}<br>
-        viewport: ${viewportWidth} x ${viewportHeight}
-    `;
 }
 
 window.addEventListener("load", applyScaling);
@@ -220,16 +212,29 @@ const wrapper = document.getElementById("frameWrapper");
 fullscreenBtn.addEventListener("click", () => {
 
     if (!isFakeFullscreen) {
+
+        /* ENTRA NEL FULLSCREEN SIMULATO */
         fakeFS.style.display = "block";
         fakeFS.appendChild(wrapper);
         fullscreenBtn.textContent = "✕";
         isFakeFullscreen = true;
+
+        /* 🔥 FIX TILT TABLET: disattiva pinch-to-zoom nel fullscreen simulato */
+        document.body.style.touchAction = "none";
+
         applyScaling();
+
     } else {
+
+        /* ESCI DAL FULLSCREEN SIMULATO */
         fakeFS.style.display = "none";
         document.body.appendChild(wrapper);
         fullscreenBtn.textContent = "⛶";
         isFakeFullscreen = false;
+
+        /* 🔥 Riattiva pinch-to-zoom */
+        document.body.style.touchAction = "auto";
+
         applyScaling();
     }
 });
