@@ -49,6 +49,45 @@ html, body {
     cursor: pointer;
 }
 
+/* Bottone impostazioni */
+#settingsBtn {
+    position: fixed;
+    top: 15px;
+    right: 70px;
+    z-index: 99999;
+    padding: 12px 16px;
+    font-size: 26px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    cursor: pointer;
+}
+
+/* Sidebar impostazioni */
+#settingsSidebar {
+    position: fixed;
+    top: 0;
+    right: -320px;
+    width: 320px;
+    height: 100vh;
+    background: #222;
+    color: white;
+    padding: 20px;
+    box-shadow: -4px 0 12px rgba(0,0,0,0.4);
+    z-index: 999999;
+    transition: right 0.35s ease;
+    font-family: sans-serif;
+}
+
+#settingsSidebar.open {
+    right: 0;
+}
+
+#settingsSidebar input[type=range] {
+    width: 100%;
+}
+
 /* Wrapper del gioco */
 #frameWrapper {
     position: absolute;
@@ -86,6 +125,30 @@ html, body {
 <div id="deviceTest"></div>
 
 <button id="fullscreenBtn">⛶</button>
+<button id="settingsBtn">⚙️</button>
+
+<!-- Sidebar impostazioni -->
+<div id="settingsSidebar">
+  <h2>⚙️ Impostazioni</h2>
+
+  <label>Scala PC (normale)</label>
+  <input type="range" id="scalePc" min="0.5" max="1.2" step="0.05">
+  <span id="scalePcValue"></span>
+
+  <br><br>
+
+  <label>Scala PC (fullscreen)</label>
+  <input type="range" id="scalePcFull" min="0.5" max="1.2" step="0.05">
+  <span id="scalePcFullValue"></span>
+
+  <br><br>
+
+  <button id="closeSettings" style="
+    margin-top: 20px;
+    padding: 10px 14px;
+    width: 100%;
+  ">Chiudi</button>
+</div>
 
 <!-- Contenitore fullscreen simulato -->
 <div id="fakeFullscreen"></div>
@@ -98,10 +161,11 @@ html, body {
 <script>
 let isFakeFullscreen = false;
 
+/* -------------------- SCALING -------------------- */
+
 function applyScaling() {
 
     const wrapper = document.getElementById("frameWrapper");
-    const testBox = document.getElementById("deviceTest");
 
     const isFullscreenPage = isFakeFullscreen;
 
@@ -113,8 +177,6 @@ function applyScaling() {
     const minSide = Math.min(realWidth, realHeight);
     const dpr = window.devicePixelRatio;
     const isPortrait = realHeight > realWidth;
-
-    /* SCALING PERSONALIZZATO */
 
     /* Smartphone */
     const scaleCellPortraitX_sites = 0.18;
@@ -142,12 +204,12 @@ function applyScaling() {
     const scaleTabletLandscapeX_full = 0.75;
     const scaleTabletLandscapeY_full = 0.75;
 
-    /* PC */
-    const scalePC_sites_X = 1.00;
-    const scalePC_sites_Y = 1.00;
+    /* PC — valori modificabili */
+    let scalePC_sites_X = parseFloat(localStorage.getItem("scalePC_sites_X")) || 1.00;
+    let scalePC_sites_Y = scalePC_sites_X;
 
-    const scalePC_full_X = 1.00;
-    const scalePC_full_Y = 1.00;
+    let scalePC_full_X = parseFloat(localStorage.getItem("scalePC_full_X")) || 1.00;
+    let scalePC_full_Y = scalePC_full_X;
 
     /* RICONOSCIMENTO DISPOSITIVO */
     const isSmartphone = (minSide <= 500 && dpr >= 2);
@@ -156,13 +218,9 @@ function applyScaling() {
 
     let scaleX;
     let scaleY;
-    let deviceType;
 
     /* SMARTPHONE */
     if (isSmartphone) {
-
-        deviceType = isPortrait ? "📱 Cell verticale" : "📱 Cell orizzontale";
-
         if (isPortrait) {
             scaleX = isFullscreenPage ? scaleCellPortraitX_full : scaleCellPortraitX_sites;
             scaleY = isFullscreenPage ? scaleCellPortraitY_full : scaleCellPortraitY_sites;
@@ -174,9 +232,6 @@ function applyScaling() {
 
     /* TABLET */
     else if (isTablet) {
-
-        deviceType = isPortrait ? "📲 Tablet verticale" : "📲 Tablet orizzontale";
-
         if (isPortrait) {
             scaleX = isFullscreenPage ? scaleTabletPortraitX_full : scaleTabletPortraitX_sites;
             scaleY = isFullscreenPage ? scaleTabletPortraitY_full : scaleTabletPortraitY_sites;
@@ -188,23 +243,19 @@ function applyScaling() {
 
     /* PC */
     else {
-
-        deviceType = "💻 PC";
-
         scaleX = isFullscreenPage ? scalePC_full_X : scalePC_sites_X;
         scaleY = isFullscreenPage ? scalePC_full_Y : scalePC_sites_Y;
     }
 
-    /* CENTRATURA STABILE */
     wrapper.style.transformOrigin = "top center";
     wrapper.style.transform = `translateX(-50%) scaleX(${scaleX}) scaleY(${scaleY})`;
-
 }
 
 window.addEventListener("load", applyScaling);
 window.addEventListener("resize", applyScaling);
 
-/* FULLSCREEN SIMULATO */
+/* -------------------- FULLSCREEN SIMULATO -------------------- */
+
 const fullscreenBtn = document.getElementById("fullscreenBtn");
 const fakeFS = document.getElementById("fakeFullscreen");
 const wrapper = document.getElementById("frameWrapper");
@@ -213,43 +264,70 @@ fullscreenBtn.addEventListener("click", () => {
 
     if (!isFakeFullscreen) {
 
-        /* ENTRA NEL FULLSCREEN SIMULATO */
         fakeFS.style.display = "block";
         fakeFS.appendChild(wrapper);
         fullscreenBtn.textContent = "✕";
         isFakeFullscreen = true;
 
-        /* 🔥 FIX TILT TABLET: disattiva pinch-to-zoom nel fullscreen simulato */
         document.body.style.touchAction = "none";
 
         applyScaling();
 
     } else {
 
-        /* ESCI DAL FULLSCREEN SIMULATO */
         fakeFS.style.display = "none";
         document.body.appendChild(wrapper);
         fullscreenBtn.textContent = "⛶";
         isFakeFullscreen = false;
 
-        /* 🔥 Riattiva pinch-to-zoom */
         document.body.style.touchAction = "auto";
 
         applyScaling();
     }
 });
+
+/* -------------------- SIDEBAR IMPOSTAZIONI -------------------- */
+
+const settingsBtn = document.getElementById("settingsBtn");
+const settingsSidebar = document.getElementById("settingsSidebar");
+
+const scalePcSlider = document.getElementById("scalePc");
+const scalePcFullSlider = document.getElementById("scalePcFull");
+
+const scalePcValue = document.getElementById("scalePcValue");
+const scalePcFullValue = document.getElementById("scalePcFullValue");
+
+const closeSettings = document.getElementById("closeSettings");
+
+let scalePC_sites_X = parseFloat(localStorage.getItem("scalePC_sites_X")) || 1.00;
+let scalePC_full_X  = parseFloat(localStorage.getItem("scalePC_full_X"))  || 1.00;
+
+scalePcSlider.value = scalePC_sites_X;
+scalePcFullSlider.value = scalePC_full_X;
+
+scalePcValue.textContent = scalePC_sites_X;
+scalePcFullValue.textContent = scalePC_full_X;
+
+settingsBtn.addEventListener("click", () => {
+    settingsSidebar.classList.add("open");
+});
+
+closeSettings.addEventListener("click", () => {
+    settingsSidebar.classList.remove("open");
+});
+
+scalePcSlider.addEventListener("input", () => {
+    scalePcValue.textContent = scalePcSlider.value;
+    localStorage.setItem("scalePC_sites_X", scalePcSlider.value);
+    applyScaling();
+});
+
+scalePcFullSlider.addEventListener("input", () => {
+    scalePcFullValue.textContent = scalePcFullSlider.value;
+    localStorage.setItem("scalePC_full_X", scalePcFullSlider.value);
+    applyScaling();
+});
 </script>
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
