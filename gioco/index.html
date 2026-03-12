@@ -28,12 +28,18 @@
     </div>
 
     <div id="rightPanel">
-      <h3>Seleziona livello</h3>
+
+      <div class="level-header">
+        <h3>Seleziona livello <button id="helpBtn">❓ Help</button></h3>
+      </div>
+
       <div class="level-switch">
         <button id="btnLevel1">🔵 Livello 1 – Comandi manuali</button>
         <button id="btnLevel2">🟢 Livello 2 – Percorso programmato</button>
         <button id="btnLevel3">🟣 Livello 3 – Sequenza di icone</button>
+        <button id="btnLevel4">🟠 Livello 4 – Percorso robot</button>
       </div>
+
 
       <!-- LIVELLO 1 -->
       <div id="level1" class="level" style="display:none; margin-top:12px;">
@@ -90,6 +96,26 @@
           <input type="file" id="iconFile" accept="application/json" style="display:none">
         </div>
       </div>
+	  
+      <!-- LIVELLO 4 -->
+      <div id="level4" class="level" style="display:none; margin-top:12px;">
+        <h3>Programma il robot per seguire il percorso</h3>
+
+        <div id="pathToolbox" class="toolbox"></div>
+
+        <h4>Sequenza robot</h4>
+        <div id="pathSequence" class="sequence"></div>
+
+        <div class="seq-buttons">
+          <button id="runPath">▶️ Esegui percorso</button>
+          <button id="clearPath">❌ Svuota sequenza</button>
+          <button id="newPathLevel">Nuovo livello</button>
+          <button id="importPaths">Importa livelli</button>
+		  <button id="randomPath">Percorso casuale</button>
+          <input type="file" id="pathFile" accept="application/json" style="display:none">
+        </div>
+      </div>
+	  
 
       <hr>
       <div class="settings">
@@ -102,10 +128,31 @@
     </div>
   </div>
 
-  <!-- SortableJS CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-  <script src="script.js"></script>
-  <div id="trash" style="width:0;height:0;overflow:hidden;"></div>
+<!-- SortableJS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<!-- POPUP HELP (DEVE STARE PRIMA DELLO SCRIPT PRINCIPALE) -->
+<div id="helpPopup" style="
+  display:none;
+  position:fixed;
+  top:50%; left:50%;
+  transform:translate(-50%, -50%);
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 0 20px rgba(0,0,0,0.3);
+  z-index:999999;
+  max-width:400px;
+  font-size:18px;
+">
+  <div id="helpContent"></div>
+  <button id="closeHelp" style="margin-top:15px;">Chiudi</button>
+</div>
+
+<script src="script.js"></script>
+
+<div id="trash" style="width:0;height:0;overflow:hidden;"></div>
 
 </body>
 </html>
+

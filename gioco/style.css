@@ -175,4 +175,147 @@ button:active{transform:scale(.99)}
   vertical-align: super; /* opzionale: sposta leggermente in alto */
 }
 
+/* -------- LIVELLO 4 -------- */
+
+.cell.start{
+  background:#4CAF50;
+  color:white;
+}
+
+.cell.end{
+  background:#F44336;
+  color:white;
+}
+
+.cell.path{
+  background:#A5D6A7;
+}
+
+.start-cell {
+    background-color: red !important;
+    border: 2px solid darkred;
+}
+
+.end-cell {
+    background-color: blue !important;
+    border: 2px solid darkblue;
+}
+
+/* Il robot PNG nel livello 4 deve essere overlay */
+#level4 .player-root {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 10;
+}
+/* --- VISIBILITÀ PANNELLI PER LIVELLO --- */
+
+/* default: visibili */
+#targetWord,
+#storyText,
+#collectedWord{
+  display:flex;
+}
+
+/* nel livello 4 spariscono */
+body.level4 #targetWord,
+body.level4 #storyText,
+body.level4 #collectedWord{
+  display:none !important;
+}
+/* Titolo speciale per il livello 4 */
+.level4-title {
+    color: #ff9800;           /* arancione brillante */
+    font-size: 28px;           /* un po’ più grande */
+    text-shadow: 1px 1px 2px black; /* leggero rilievo */
+}
+
+/* --- NASCONDI TUTTI I TOOLBOX E SEQUENZE DI DEFAULT --- */
+#toolbox,
+#sequence,
+#iconToolbox,
+#iconSequence,
+#pathToolbox,
+#pathSequence,
+#runPath,
+#clearPath,
+#newPathLevel,
+#importPaths,
+#randomPath {
+  display: none !important;
+}
+
+/* --- LIVELLO 2 --- */
+body.level2 #toolbox,
+body.level2 #sequence {
+  display: flex !important;
+}
+
+/* --- LIVELLO 3 --- */
+body.level3 #iconToolbox,
+body.level3 #iconSequence {
+  display: flex !important;
+}
+
+/* --- NASCONDI TUTTO IL CONTENUTO DEL LIVELLO 4 DI DEFAULT --- */
+#level4 h3,
+#level4 h4,
+#pathToolbox,
+#pathSequence,
+#runPath,
+#clearPath,
+#newPathLevel,
+#importPaths,
+#randomPath {
+  display: none !important;
+}
+
+/* --- LIVELLO 4 --- */
+body.level4 #pathToolbox,
+body.level4 #pathSequence,
+body.level4 #runPath,
+body.level4 #clearPath,
+body.level4 #newPathLevel,
+body.level4 #importPaths,
+body.level4 #randomPath {
+  display: flex !important;
+}
+
+/* --- NASCONDI "Rigenera trappole" e "Reset completo" nel livello 4 --- */
+body.level4 #regenTraps,
+body.level4 #resetBtn,
+body.level4 .settings {
+  display: none !important;
+}
+
+/* per posizonare il bottone di help */
+.level-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.level-header h3 {
+  margin: 0;
+}
+
+#helpBtn {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #1976d2;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+#helpBtn:active {
+  transform: scale(0.97);
+}
 

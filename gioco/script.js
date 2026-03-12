@@ -19,12 +19,55 @@ let collected = [];
 let letters = [];
 let traps = [];
 let executing = false;
+let currentLevel = 1;
+
 
 // LEVEL 3 state
-let allStories = [];      // tutte le storie caricate dal JSON
-let currentStory = null;  // storia in uso
+let allStories = [
+    {
+        story: "Ho voglia di un gelato.",
+        sequence: ["💰", "🚲", "🏪", "🍦"],
+        grid: [
+            { x: 2, y: 3, icon: "💰" },
+            { x: 5, y: 3, icon: "🚲" },
+            { x: 6, y: 7, icon: "🏪" },
+            { x: 8, y: 4, icon: "🍦" }
+        ]
+    },
+    {
+        story: "Devo andare a scuola.",
+        sequence: ["⏰", "🚶‍♂️", "🚌", "🏫"],
+        grid: [
+            { x: 1, y: 2, icon: "⏰" },
+            { x: 3, y: 2, icon: "🚶‍♂️" },
+            { x: 4, y: 5, icon: "🚌" },
+            { x: 7, y: 6, icon: "🏫" }
+        ]
+    },
+    {
+        story: "Preparo una torta.",
+        sequence: ["🛒", "🥚", "🥣", "🎂"],
+        grid: [
+            { x: 0, y: 1, icon: "🛒" },
+            { x: 2, y: 4, icon: "🥚" },
+            { x: 5, y: 6, icon: "🥣" },
+            { x: 8, y: 2, icon: "🎂" }
+        ]
+    }
+];
+
+let currentStory = null; // storie in uso
 let lastStoryIndex = -1;
-let targetIcons = [];     // sequenza (array di emoji) corrente per L3
+let targetIcons = [];  // sequenza (array di emoji) corrente in L3
+
+
+// LEVEL 4 state
+//let correctPath = [];
+//let startX = 0;
+//let startY = 0;
+//let loadedPaths = [];   // tutti i percorsi importati
+
+
 
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 
@@ -132,52 +175,120 @@ function renderLettersAndTraps(mode="L2"){
   });
 }
 
+// resetta il colore nei livelli 1-3
+function resetTitle() {
+    const title = document.getElementById('titleStatic');
+    title.classList.remove('level4-title');
+}
+
+
+// colora di giallo il percorso sbagliato nel livello 4
+function highlightWrongCell(r, c) {
+
+    // vale solo per il livello 4
+    if (currentLevel !== 4) return;
+
+    const index = r * cols + c;
+    const cell = grid.children[index];
+
+    if (!cell) return;
+
+    cell.classList.add("wrong-cell");
+
+    setTimeout(() => {
+        cell.classList.remove("wrong-cell");
+    }, 2000);
+}
+
+
+// resetta la griglia su L3 quando si provine da un altro livello, se già caricato il file json
+function clearGridForLevel3() {
+    for(let r = 0; r < rows; r++){
+        for(let c = 0; c < cols; c++){
+            const cell = document.getElementById(`cell-${r}-${c}`);
+            if(!cell) continue;
+            cell.textContent = '';
+            cell.style.backgroundColor = '';
+            cell.className = 'grid-cell'; // ripristina classi di base
+        }
+    }
+    // rimuove eventuali elementi robot residui
+    document.querySelectorAll('.player-root').forEach(e => e.remove());
+}
+
+
+
+
 
 // ---------- PLAYER ----------
-function updatePlayer(){
-  document.querySelectorAll('.player-icon-container, .player-root').forEach(e=>e.remove());
+function updatePlayer() {
 
-  const root = document.createElement('div');
-  root.className = 'player-root';
-  root.style.position = 'relative';
-  root.style.width = '32px';
-  root.style.height = '32px';
-  root.style.margin = '0 auto';
+    // Rimuovi robot precedente
+    document.querySelectorAll('.player-root').forEach(e => e.remove());
 
-  const group = document.createElement('div');
-  group.className = 'orient-group';
-  group.style.position = 'absolute';
-  group.style.left = '50%';
-  group.style.top = '50%';
-  group.style.width = '32px';
-  group.style.height = '32px';
-  group.style.transform = 'translate(-50%, -50%) ' + (
-    orientation==='S' ? 'rotate(0deg)'  :
-    orientation==='E' ? 'rotate(-90deg)' :
-    orientation==='N' ? 'rotate(180deg)':
-                        'rotate(90deg)'
-  );
-  group.style.transition = 'transform 0.25s ease';
+    // Crea contenitore principale del robot
+    const root = document.createElement('div');
+    root.className = 'player-root';
+    root.style.position = 'relative';
+    root.style.width = '32px';
+    root.style.height = '32px';
+    root.style.margin = '0 auto';
 
-  const img=document.createElement('img');
-  img.src='https://cdn-icons-png.flaticon.com/512/4712/4712035.png';
-  img.className='player-icon';
-  img.style.width='32px';
-  img.style.height='32px';
+    // Nel livello 4 il robot deve essere overlay
+    if (currentLevel === 4) {
+        root.style.position = 'absolute';
+        root.style.top = '0';
+        root.style.left = '0';
+        root.style.width = '100%';
+        root.style.height = '100%';
+        root.style.display = 'flex';
+        root.style.alignItems = 'center';
+        root.style.justifyContent = 'center';
+        root.style.pointerEvents = 'none';
+        root.style.zIndex = '10';
+    }
 
-  const pointer=document.createElement('div');
-  pointer.className='direction-pointer';
-  pointer.style.position='absolute';
-  pointer.style.left='50%';
-  pointer.style.transform='translateX(-50%)';
-  pointer.style.bottom='-10px';
+    // Gruppo che ruota
+    const group = document.createElement('div');
+    group.className = 'orient-group';
+    group.style.position = 'absolute';
+    group.style.left = '50%';
+    group.style.top = '50%';
+    group.style.width = '32px';
+    group.style.height = '32px';
+    group.style.transform = 'translate(-50%, -50%) ' + (
+        orientation === 'S' ? 'rotate(0deg)' :
+        orientation === 'E' ? 'rotate(-90deg)' :
+        orientation === 'N' ? 'rotate(180deg)' :
+                              'rotate(90deg)'
+    );
+    group.style.transition = 'transform 0.25s ease';
 
-  group.appendChild(img);
-  group.appendChild(pointer);
-  root.appendChild(group);
-  const cell = grid[player.r] && grid[player.r][player.c];
-  if(cell) cell.appendChild(root);
+    // Immagine PNG del robot
+    const img = document.createElement('img');
+    img.src = 'https://cdn-icons-png.flaticon.com/512/4712/4712035.png';
+    img.className = 'player-icon';
+    img.style.width = '32px';
+    img.style.height = '32px';
+
+    // Triangolino direzionale
+    const pointer = document.createElement('div');
+    pointer.className = 'direction-pointer';
+    pointer.style.position = 'absolute';
+    pointer.style.left = '50%';
+    pointer.style.transform = 'translateX(-50%)';
+    pointer.style.bottom = '-10px';
+
+    // Montaggio
+    group.appendChild(img);
+    group.appendChild(pointer);
+    root.appendChild(group);
+
+    // Inserimento nella cella
+    const cell = document.getElementById(`cell-${player.r}-${player.c}`);
+    if (cell) cell.appendChild(root);
 }
+
 
 function resetGame(full=true){
   player={r:0,c:0}; orientation='S'; collected=[];
@@ -620,23 +731,6 @@ async function executeSequenceBombFromContainer(containerId, mode="L2") {
     executing = false;
 }
 
-// Funzione di supporto per errore di orientamento
-async function wrongOrientation(startR,startC,startOrientation){
-    try{ soundError.play(); }catch(e){}
-    robotSpeak("Orientamento sbagliato! Non posso muovermi in quella direzione.", document.getElementById('message'));
-
-    const cellHit = grid[player.r][player.c];
-    if(cellHit){
-        cellHit.classList.add('shake');
-        await sleep(1000);
-        cellHit.classList.remove('shake');
-    }
-
-    player.r = startR; player.c = startC; orientation = startOrientation;
-    updatePlayer();
-    executing=false;
-}
-
 
 // ---------- EXECUTE SEQUENCE (NORMAL - versione rigida con controllo orientamento) ----------
 async function executeSequenceFromContainer(containerId, mode="L2") {
@@ -861,45 +955,100 @@ document.getElementById('wordFile') && document.getElementById('wordFile').addEv
   }
 });
 
+// ---------- CURRENT LEVEL TRACKER ----------
+//let currentLevel = 1;
+
+//document.getElementById('btnLevel1').onclick = () => { currentLevel = 1; };
+//document.getElementById('btnLevel2').onclick = () => { currentLevel = 2; };
+//document.getElementById('btnLevel3').onclick = () => { currentLevel = 3; };
+//document.getElementById('btnLevel4').onclick = () => { currentLevel = 4; };
+
+
 // ---------- LEVEL SWITCH ----------
 document.getElementById('btnLevel1') && document.getElementById('btnLevel1').addEventListener('click', ()=>{
+  document.body.className = "level1";
   document.getElementById('level1').style.display='block';
   document.getElementById('level2').style.display='none';
   document.getElementById('level3').style.display='none';
   document.getElementById('targetWord').style.display='inline';
   document.getElementById('storyText').style.display='none';
+  document.getElementById('titleStatic').textContent = "Costruisci la parola:";
   resetGame();
+
+  resetTitle();
+
+
+  
 });
 document.getElementById('btnLevel2') && document.getElementById('btnLevel2').addEventListener('click', ()=>{
+  document.body.className = "level2";
   document.getElementById('level2').style.display='block';
   document.getElementById('level1').style.display='none';
   document.getElementById('level3').style.display='none';
   document.getElementById('targetWord').style.display='inline';
   document.getElementById('storyText').style.display='none';
+  document.getElementById('titleStatic').textContent = "Costruisci la parolla:";
   resetGame();
-});
-document.getElementById('btnLevel3') && document.getElementById('btnLevel3').addEventListener('click', ()=>{
-  document.getElementById('level3').style.display='block';
-  document.getElementById('level1').style.display='none';
-  document.getElementById('level2').style.display='none';
-  document.getElementById('targetWord').style.display='none';
-  document.getElementById('storyText').style.display='inline';
 
-  // prepare collected slots for currentStory/targetIcons
-  const cw = document.getElementById('collectedWord'); if(cw){ cw.innerHTML=''; if(targetIcons && targetIcons.length){ for(let i=0;i<targetIcons.length;i++){ const s=document.createElement('div'); s.className='letter-slot'; s.id=`slot-${i}`; cw.appendChild(s);} } }
-
-  buildGrid();
-  if(targetIcons && targetIcons.length){
-    placeSymbolsRandom(targetIcons);
-    placeTrapsRandom(parseInt((document.getElementById('trapCount')&&document.getElementById('trapCount').value)||6));
-    renderLettersAndTraps();
-    updatePlayer();
-  } else {
-    placeTrapsRandom(parseInt((document.getElementById('trapCount')&&document.getElementById('trapCount').value)||6));
-    renderLettersAndTraps();
-    updatePlayer();
-  }
+  resetTitle();
+  
 });
+document.getElementById('btnLevel3')?.addEventListener('click', () => {
+    document.body.className = "level3";
+    document.getElementById('level3').style.display='block';
+    document.getElementById('level1').style.display='none';
+    document.getElementById('level2').style.display='none';
+    document.getElementById('targetWord').style.display='none';
+    document.getElementById('storyText').style.display='inline';
+    document.getElementById('titleStatic').textContent = "ricostruisci la sequenza:";
+
+    // pulisce sequenza precedente
+    clearGridForLevel3();   
+    clearIconSequence();    
+
+    // ricostruisce griglia e icone usando la storia corrente
+    if(currentStory) renderStory(currentStory);
+
+    resetTitle();
+    
+});
+
+
+
+
+// ---------- LIVELLO 4 ---------- funzionava benino
+
+//document.getElementById('btnLevel4') && document.getElementById('btnLevel4').addEventListener('click', ()=>{
+  //document.getElementById('level4').style.display='block';
+  //document.getElementById('level1').style.display='none';
+  //document.getElementById('level2').style.display='none';
+  //document.getElementById('level3').style.display='none';
+
+  // Mostra titolo o testo specifico del livello 4
+  //document.getElementById('targetWord').style.display='none';
+  //document.getElementById('storyText').style.display='inline';
+
+  // Inizializza griglia e percorso robot
+  //buildGrid();
+  //resetRobot();  // funzione da creare per posizionare il robot sulla casella di partenza
+  //renderLettersAndTraps();
+//});
+
+document.getElementById('randomPath')?.addEventListener('click', () => {
+    if (builtInPaths.length === 0) {
+        alert("Nessun percorso predefinito disponibile.");
+        return;
+    }
+
+    const random = builtInPaths[Math.floor(Math.random() * builtInPaths.length)];
+
+    loadLevel4Path(random);  // 🔥 NON random.path
+
+    showMessage("Percorso caricato: " + random.name);
+});
+
+
+
 
 // ---------- ICON TOOLBOX / ICON SEQUENCE (L3) ----------
 function setupIconToolboxAndSequence(){
@@ -915,6 +1064,7 @@ function setupIconToolboxAndSequence(){
     {action:'RL', cls:'cmd-rotL',  icon:'↺<span class="small-text">S</span>'},
     {action:'J',  cls:'cmd-jump',  icon:'⤴️'},
   ];
+   
 
   // --- CREA TOOLBOX ---
   defs.forEach(d=>{
@@ -1066,35 +1216,659 @@ function loadRandomStory(){
 }
 
 function renderStory(story){
+    if(!story) return;
+    collected = [];
 
-  if(!story) return;
-  collected = []; /* azzera le variabili per una nuova sequenza */
+    const storyEl = document.getElementById('storyText'); 
+    if(storyEl) storyEl.textContent = story.story || '';
 
-  const storyEl = document.getElementById('storyText'); 
-  if(storyEl) storyEl.textContent = story.story || '';
+    // target icons
+    targetIcons = story.sequence.map(x => normEmoji(typeof x === 'string' ? x : (x.icon || String(x))));
 
-  // set target icons (array di emoji)
-  targetIcons = story.sequence.map(x => normEmoji(typeof x === 'string' ? x : (x.icon || String(x))));
+    // ricrea SEMPRE gli slot per il livello 3
+    const cw = document.getElementById('collectedWord'); 
+    if (cw) {
+        cw.innerHTML = ""; // ← SVUOTA SEMPRE GLI SLOT PRECEDENTI
 
-  // set collected slots
-  const cw = document.getElementById('collectedWord'); 
-  if(cw){ 
-    cw.innerHTML=''; 
-    for(let i=0;i<targetIcons.length;i++){ 
-      const s=document.createElement('div'); 
-      s.className='letter-slot'; 
-      s.id=`slot-${i}`; 
-      cw.appendChild(s); 
-    } 
-  }
+        for (let i = 0; i < targetIcons.length; i++) {
+            const s = document.createElement('div');
+            s.className = 'letter-slot';
+            s.id = `slot-${i}`;
+            cw.appendChild(s);
+        }
+    }
 
-  // build grid and place icons
-  buildGrid();
-  placeSymbolsRandom(targetIcons);
-  placeTrapsRandom(parseInt((document.getElementById('trapCount') && document.getElementById('trapCount').value) || 6));
-  renderLettersAndTraps("L3");
-  updatePlayer();
+
+
+    buildGrid();
+    placeSymbolsRandom(targetIcons);
+    placeTrapsRandom(parseInt((document.getElementById('trapCount') && document.getElementById('trapCount').value) || 6));
+    renderLettersAndTraps("L3");
+    updatePlayer();
 }
+
+
+// ==================== Livello 4 – Percorso Robot ====================
+
+// ====== Percorsi predefiniti per Livello 4 ======
+const builtInPaths = [
+    {
+        name: "Linea orizzontale",
+        path: [
+            {x:0, y:0},
+            {x:1, y:0},
+            {x:2, y:0},
+            {x:3, y:0}
+        ]
+    },
+    {
+        name: "Linea verticale",
+        path: [
+            {x:0, y:0},
+            {x:0, y:1},
+            {x:0, y:2},
+            {x:0, y:3}
+        ]
+    },
+    {
+        name: "L semplice",
+        path: [
+            {x:0, y:0},
+            {x:1, y:0},
+            {x:2, y:0},
+            {x:2, y:1},
+            {x:2, y:2}
+        ]
+    },
+    {
+        name: "Quadrato",
+        path: [
+            {x:1, y:1},
+            {x:2, y:1},
+            {x:2, y:2},
+            {x:1, y:2},
+            {x:1, y:1}
+        ]
+    },
+    {
+        name: "Zig-Zag",
+        path: [
+            {x:0, y:0},
+            {x:1, y:0},
+            {x:1, y:1},
+            {x:2, y:1},
+            {x:2, y:2},
+            {x:3, y:2}
+        ]
+    }
+];
+
+function clearGridForLevel4() {
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const cell = document.getElementById(`cell-${r}-${c}`);
+            if (!cell) continue;
+
+            cell.textContent = "";
+            cell.style.backgroundColor = "";
+            cell.classList.remove("letter", "emoji", "trap", "shake");
+        }
+    }
+}
+
+
+function resetRobot() {
+
+    // Rimuovi robot precedente
+    document.querySelectorAll('.player-root').forEach(e => e.remove());
+
+    // Imposta coordinate di partenza
+    player.r = startY;
+    player.c = startX;
+
+    // Orientamento iniziale
+    orientation = 'S';
+
+    // Disegna robot PNG
+    updatePlayer();
+}
+
+
+async function runLevel4Path(path) {
+    if (!path || path.length === 0 || currentLevel !== 4) return;
+
+    const startPos = { r: path[0].y, c: path[0].x };
+    const origR = player.r, origC = player.c;
+    player.r = startPos.r;
+    player.c = startPos.c;
+    orientation = 'S'; // default
+    updatePlayer();
+
+    for (let i = 1; i < path.length; i++) {
+        const target = path[i];
+        const dr = target.y - player.r;
+        const dc = target.x - player.c;
+
+        // calcola direzione desiderata
+        let desiredOrientation;
+        if (dr === -1) desiredOrientation = 'N';
+        else if (dr === 1) desiredOrientation = 'S';
+        else if (dc === 1) desiredOrientation = 'E';
+        else if (dc === -1) desiredOrientation = 'W';
+        else continue; // salto diagonali o stesse coordinate
+
+        // ruota robot se necessario
+        if (orientation !== desiredOrientation) {
+            await rotateRobotTo(desiredOrientation);
+            orientation = desiredOrientation;
+        }
+
+        // muovi robot
+        player.r = target.y;
+        player.c = target.x;
+        updatePlayer();
+        await sleep(350);
+
+        // controlla se è sulla cella corretta del percorso
+        const onPath = path.some(p => p.x === player.c && p.y === player.r);
+        if (!onPath) {
+            const cell = grid[player.r][player.c];
+            if (cell) cell.style.backgroundColor = 'yellow';
+            await sleep(700);
+
+            // reset al punto di partenza
+            player.r = startPos.r;
+            player.c = startPos.c;
+            orientation = 'S';
+            updatePlayer();
+
+            // rimuove evidenziazione gialla
+            grid.forEach(row => row.forEach(c => c.style.backgroundColor = ''));
+            return;
+        }
+    }
+
+    // percorso completato correttamente
+    robotSpeak("Percorso completato!", document.getElementById('message'));
+}
+
+// pulizia casella Start e End
+function clearStartEndCells() {
+    document.querySelectorAll('.start-cell').forEach(c => c.classList.remove('start-cell'));
+    document.querySelectorAll('.end-cell').forEach(c => c.classList.remove('end-cell'));
+}
+
+function updateRobotDirection() {
+    if (currentLevel !== 4) return;
+
+    const arrow = document.querySelector("#player .robot-arrow");
+    if (!arrow) return;
+
+    if (player.dir === 0) arrow.textContent = "▲";
+    if (player.dir === 1) arrow.textContent = "▶";
+    if (player.dir === 2) arrow.textContent = "▼";
+    if (player.dir === 3) arrow.textContent = "◀";
+}
+
+
+
+// MUOVE IL ROBOT (stessa logica comandi L3)
+// MUOVE IL ROBOT (livello 4 - versione stabile)
+async function moveRobot(action) {
+
+    // ---- MOVIMENTI ----
+    if (action === 'R') {
+        player.c = Math.min(cols - 1, player.c + 1);
+    }
+    else if (action === 'L') {
+        player.c = Math.max(0, player.c - 1);
+    }
+    else if (action === 'U') {
+        player.r = Math.max(0, player.r - 1);
+    }
+    else if (action === 'D') {
+        player.r = Math.min(rows - 1, player.r + 1);
+    }
+
+    // ---- SALTO ----
+    else if (action === 'J') {
+        player.c = Math.min(cols - 1, player.c + 2);
+    }
+
+    // ---- ROTAZIONI ----
+    else if (action === 'RL') {
+        rotate('L');
+    }
+    else if (action === 'RR') {
+        rotate('R');
+    }
+
+    // aggiorna grafica robot
+    updatePlayer();
+    updateRobotDirection();
+
+    await new Promise(resolve => setTimeout(resolve, 400));
+}
+
+
+// CARICA PERCORSO DA JSON E COLORA CASELLE VERDI
+function loadLevel4Path(data) {
+    if (!data || !Array.isArray(data.path) || data.path.length === 0) {
+        alert("Percorso JSON non valido.");
+        return;
+    }
+
+    correctPath = data.path;
+
+    // coordinate partenza
+    startX = correctPath[0].x;
+    startY = correctPath[0].y;
+
+    // 1️⃣ PULIZIA
+    clearGridForLevel4();
+    clearStartEndCells();
+
+    // 2️⃣ COLORA E NUMERA IL PERCORSO
+    correctPath.forEach((cell, index) => {
+        const cellDiv = document.getElementById(`cell-${cell.y}-${cell.x}`);
+        if (!cellDiv) return;
+
+        cellDiv.style.backgroundColor = 'lightgreen';
+        cellDiv.textContent = (index + 1).toString();
+        cellDiv.style.fontWeight = "bold";
+        cellDiv.style.fontSize = "16px";
+    });
+
+    // 3️⃣ START ROSSO
+    const startCell = document.getElementById(`cell-${startY}-${startX}`);
+    if (startCell) startCell.classList.add('start-cell');
+
+    // 4️⃣ END BLU
+    const last = correctPath[correctPath.length - 1];
+    const endCell = document.getElementById(`cell-${last.y}-${last.x}`);
+    if (endCell) endCell.classList.add('end-cell');
+
+    // 5️⃣ MESSAGGIO
+    showMessage("Percorso caricato: " + (data.name || "senza nome"));
+
+    // POSIZIONA IL ROBOT SULLA CASELLA START
+    player.r = startY;
+    player.c = startX;
+    orientation = 'S';
+    updatePlayer();
+
+    }
+
+
+
+
+
+
+// MOSTRA MESSAGGI
+function showMessage(msg) {
+    const msgDiv = document.getElementById('message');
+    if (msgDiv) {
+        msgDiv.innerText = msg;
+        setTimeout(()=>{ msgDiv.innerText=''; }, 3000);
+    }
+}
+
+// INIZIALIZZAZIONE LIVELLO 4
+// ======================= LIVELLO 4 =======================
+
+// Stato livello 4
+let correctPath = [];
+let startX = 0;
+let startY = 0;
+let loadedPaths = [];   // 🔥 tutti i percorsi importati
+
+// INIZIALIZZAZIONE LIVELLO 4
+document.getElementById('btnLevel4')?.addEventListener('click', () => {
+
+    // Mostra livello 4
+	document.body.className = "level4";
+    document.getElementById('level4').style.display = 'block';
+    document.getElementById('level1').style.display = 'none';
+    document.getElementById('level2').style.display = 'none';
+    document.getElementById('level3').style.display = 'none';
+    document.getElementById('targetWord').style.display = 'none';
+    document.getElementById('storyText').style.display = 'inline';
+
+    const title = document.getElementById('titleStatic');
+    title.textContent = "🤖 Aiuta il robot a non sbagliare percorso:";
+    
+    // Aggiunge una classe speciale per lo stile
+    title.classList.add('level4-title');	
+
+    // Costruisci griglia
+    buildGrid();
+    clearGridForLevel4();
+    clearStartEndCells();
+
+    // 0️⃣ Reset posizione robot per evitare r3 c10
+    player.r = 0;
+    player.c = 0;
+
+    // 1️⃣ Carica percorso casuale
+    if (loadedPaths && loadedPaths.length > 0) {
+        const random = loadedPaths[Math.floor(Math.random() * loadedPaths.length)];
+        loadLevel4Path(random);
+
+        // 2️⃣ Imposta posizione robot
+        //player.r = startY;
+        //player.c = startX;
+
+        // 3️⃣ Disegna robot PNG
+        //setTimeout(() => updatePlayer(), 20);
+
+        showMessage("Percorso caricato: " + (random.name || "senza nome"));
+    } else {
+        showMessage(`⚠️ Clicca su "Percorso casuale" o importa un JSON con "Carica livelli"`);
+    }
+
+
+    // TOOLBOX DIREZIONI
+    const pathToolbox = document.getElementById('pathToolbox');
+    pathToolbox.innerHTML = '';
+
+    const directions = [
+        {action:'U',  icon:'⬆️'},
+        {action:'D',  icon:'⬇️'},
+        {action:'L',  icon:'⬅️'},
+        {action:'R',  icon:'➡️'},
+        {action:'J',  icon:'⤴️'},
+        {action:'RL', icon:'↺'},
+        {action:'RR', icon:'↻'}
+    ];
+
+    directions.forEach(d => {
+        const el = document.createElement('div');
+        el.className = 'tool icon-tool';
+        el.dataset.action = d.action;
+        el.draggable = true;
+
+        const ic = document.createElement('div');
+        ic.className = 'icon';
+        ic.innerHTML = d.icon;
+        el.appendChild(ic);
+
+        const hint = document.createElement('div');
+        hint.style.fontSize = '12px';
+        hint.style.color = '#555';
+        hint.textContent = 'Trascina';
+        el.appendChild(hint);
+
+        pathToolbox.appendChild(el);
+    });
+
+    Sortable.create(pathToolbox, {
+        group: { name: 'shared-icons', pull: 'clone', put: false },
+        sort: false,
+        animation: 150
+    });
+
+    // SEQUENZA
+    const seq = document.getElementById('pathSequence');
+    seq.innerHTML = '';
+
+    Sortable.create(seq, {
+        group: { name: 'shared-icons', pull: false, put: true },
+        animation: 150,
+        removeOnSpill: true,
+        handle: '.icon',
+
+        filter: 'input, [data-no-drag="true"]',
+        onFilter(evt) {
+            if (evt.target.tagName === 'INPUT') {
+                evt.preventDefault();
+                evt.target.focus();
+            }
+        },
+
+        onAdd(evt) {
+            const action = evt.item.dataset.action;
+
+            const block = document.createElement('div');
+            block.className = 'icon-seq-block';
+            block.dataset.action = action;
+
+            const ic = document.createElement('div');
+            ic.className = 'icon';
+            ic.innerHTML =
+                action === 'U'  ? '⬆️' :
+                action === 'D'  ? '⬇️' :
+                action === 'L'  ? '⬅️' :
+                action === 'R'  ? '➡️' :
+                action === 'J'  ? '⤴️' :
+                action === 'RL' ? '↺' :
+                                  '↻';
+            block.appendChild(ic);
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.inputMode = 'numeric';
+            input.pattern = '[0-9]*';
+            input.value = '1';
+            input.classList.add('seq-input');
+            input.setAttribute('data-no-drag', 'true');
+            block.appendChild(input);
+
+            const rm = document.createElement('button');
+            rm.className = 'remove';
+            rm.textContent = '✖';
+            rm.onclick = () => block.remove();
+            block.appendChild(rm);
+
+            evt.item.replaceWith(block);
+        }
+    });
+	
+	
+// per livello 4 incaso orentamento non corretto
+
+async function wrongOrientationLevel4() {
+    try { soundError.play(); } catch(e){}
+
+    robotSpeak("Orientamento sbagliato! Non posso procedere in questa direzione.", document.getElementById('message'));
+
+    // anima il robot sulla cella corrente
+    const cell = grid[player.r][player.c];
+    if(cell){
+        cell.classList.add('shake');
+        await sleep(1000);
+        cell.classList.remove('shake');
+    }
+
+    // --- RIPRISTINO CELLE SBAGLIATE ---
+    wrongCells.forEach(cell => {
+        cell.style.backgroundColor = cell.dataset.originalColor || "";
+        delete cell.dataset.originalColor;
+    });
+    wrongCells.length = 0; // svuota l’array
+
+    // --- TORNA AL PUNTO DI PARTENZA ---
+    player.r = startY;
+    player.c = startX;
+    orientation = 'S'; // orientamento iniziale del livello
+    updatePlayer();
+
+    // opzionale: piccolo delay per vedere il reset
+    await sleep(200);
+}
+
+// ---------- RUN PERCORSO LIVELLO 4 (AGGIORNATO CON CONTROLLO ORIENTAMENTO) ----------
+document.getElementById('runPath').onclick = async () => {
+    const seqDivs = document.getElementById('pathSequence').children;
+
+    if (!correctPath || correctPath.length === 0) {
+        showMessage("Prima carica un percorso JSON.");
+        return;
+    }
+
+    // Costruisci sequenza di azioni dal DOM
+    const playerPath = [];
+    for (let div of seqDivs) {
+        const action = div.dataset.action;
+        const val = parseInt(div.querySelector('input').value) || 1;
+        for (let i = 0; i < val; i++) {
+            playerPath.push(action);
+        }
+    }
+
+    let correct = true;
+    const wrongCells = [];
+	let moveIndex = 1;
+
+    // --- Funzione di supporto per orientamento sbagliato ---
+    async function wrongOrientationLevel4(wrongCellsArray) {
+        try { soundError.play(); } catch(e){}
+        robotSpeak("Orientamento sbagliato! Non posso procedere in questa direzione.", document.getElementById('message'));
+
+        const cell = grid[player.r][player.c];
+        if(cell){
+            cell.classList.add('shake');
+            await sleep(1000);
+            cell.classList.remove('shake');
+        }
+
+        // ripristina colori celle sbagliate
+        wrongCellsArray.forEach(cell => {
+            cell.style.backgroundColor = cell.dataset.originalColor || "";
+            delete cell.dataset.originalColor;
+        });
+        wrongCellsArray.length = 0; // svuota array
+
+        // torna al punto di partenza
+        player.r = startY;
+        player.c = startX;
+        orientation = 'S'; // oppure orientamento iniziale del livello
+        updatePlayer();
+
+        await sleep(200); // piccolo delay opzionale
+    }
+
+    // --- Esecuzione percorso ---
+    for (let stepIndex = 0; stepIndex < playerPath.length; stepIndex++) {
+        const action = playerPath[stepIndex];
+
+        // --- Controllo orientamento ---
+        if (action !== 'RL' && action !== 'RR') {
+            let requiredOrientation;
+            if (action === 'R' || action === 'J') requiredOrientation = 'E';
+            else if (action === 'L') requiredOrientation = 'W';
+            else if (action === 'U') requiredOrientation = 'N';
+            else if (action === 'D') requiredOrientation = 'S';
+
+            if (orientation !== requiredOrientation) {
+                await wrongOrientationLevel4(wrongCells);
+                return;
+            }
+        }
+
+        // --- Esegui azione ---
+        await moveRobot(action, "L4");
+
+        // --- Salta rotazioni per controllo celle ---
+        if (action === 'RL' || action === 'RR') continue;
+
+        // --- Controllo posizione solo se c'è un expected valido ---
+        const expected = correctPath[moveIndex]; // usa stepIndex, non stepIndex+1
+        if (!expected || player.c !== expected.x || player.r !== expected.y) {
+            correct = false;
+            const cell = document.getElementById(`cell-${player.r}-${player.c}`);
+            if (cell && !wrongCells.includes(cell)) {
+                cell.dataset.originalColor = cell.style.backgroundColor || "";
+                cell.style.backgroundColor = "yellow";
+                wrongCells.push(cell);
+            }
+        }
+		moveIndex++;
+    }
+
+    // --- Messaggio finale ---
+    if (correct && player.r === correctPath[correctPath.length - 1].y && player.c === correctPath[correctPath.length - 1].x) {
+        showMessage("✅ Percorso corretto!");
+        await robotSpeak("Percorso completato correttamente!", document.getElementById('message'));
+    } else {
+        await robotSpeak("Percorso non corretto, ritorno al punto di partenza.", document.getElementById('message'));
+
+        // attendi 2 secondi prima di ripristinare colori
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        wrongCells.forEach(cell => {
+            cell.style.backgroundColor = cell.dataset.originalColor || "";
+            delete cell.dataset.originalColor;
+        });
+
+        resetRobot();
+    }
+};
+
+    // CLEAR
+    document.getElementById('clearPath').onclick = () => {
+        document.getElementById('pathSequence').innerHTML = '';
+        resetRobot();
+    };
+
+});
+
+// ======================= IMPORT JSON (FUORI DAL LIVELLO 4) =======================
+
+document.getElementById('importPaths').onclick = () => {
+    document.getElementById('pathFile').click();
+};
+
+document.getElementById('pathFile').onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        try {
+            const data = JSON.parse(ev.target.result);
+            console.log("JSON caricato:", data);
+
+            if (Array.isArray(data.paths)) {
+                loadedPaths = data.paths;
+                const first = loadedPaths[0];
+                loadLevel4Path(first);
+                showMessage("Percorso caricato: " + (first.name || "senza nome"));
+                return;
+            }
+
+            if (Array.isArray(data.path)) {
+                loadedPaths = [data];
+                loadLevel4Path(data);
+                showMessage("Percorso singolo caricato.");
+                return;
+            }
+
+            alert("File JSON non corretto per il livello 4.");
+
+        } catch (err) {
+            alert("Errore nel parsing del file JSON del percorso.");
+            console.error(err);
+        }
+    };
+
+    reader.readAsText(file);
+};
+
+// ======================= PERCORSO CASUALE =======================
+
+document.getElementById('randomPath').onclick = () => {
+    if (!loadedPaths || loadedPaths.length === 0) {
+        showMessage("Prima importa un file JSON con percorsi.");
+        return;
+    }
+
+    const random = loadedPaths[Math.floor(Math.random() * loadedPaths.length)];
+    loadLevel4Path(random);
+    showMessage("Percorso casuale: " + (random.name || "senza nome"));
+};
+
+// ======================= FINE LIVELLO 4 =======================
+
+
 // ---------- NEW ICON SEQ BUTTON ----------
 document.getElementById('newIconSeqBtn') && document.getElementById('newIconSeqBtn').addEventListener('click', ()=>{
   if(allStories.length === 0){
@@ -1228,3 +2002,43 @@ resetGame();
     } catch(e){ /* ignore */ }
   }
 })();
+
+const helpTexts = {
+  1: `
+    <b>Livello 1 – Comandi manuali</b><br><br>
+    Usa i pulsanti freccia per muovere il robot.<br>
+    Raccogli le lettere nell’ordine corretto per formare la parola.<br>
+    Puoi anche ruotare o distruggere una trappola.
+  `,
+  2: `
+    <b>Livello 2 – Percorso programmato</b><br><br>
+    Trascina i blocchi per creare un sequenza.<br>
+    Premi “Esegui sequenza” per far muovere il robot.<br>
+    Evita le trappole e raccogli le lettere nell’ordine giusto.
+  `,
+  3: `
+    <b>Livello 3 – Sequenza di icone</b><br><br>
+    Trascina i blocchi per creare una sequenza. Premi “Esegui sequenza” per far muovere il robot.<br>
+    Ogni icona rappresenta un passaggio della narrazione.<br>
+    Raccogli  le icone nell’ordine corretto.
+  `,
+  4: `
+    <b>Livello 4 – Percorso robot</b><br><br>
+	Per cominciare premi "percorso casuale" o "importa livelli".
+    Trascina i comandi per programmare il robot.<br>
+    L’obiettivo è raggiungere la cella finale seguendo il percorso segnato.<br>
+    Premi “Esegui percorso” per vedere il risultato.
+  `
+};
+
+// mostra popup
+document.getElementById("helpBtn").addEventListener("click", () => {
+  const level = document.body.className.replace("level", "");
+  document.getElementById("helpContent").innerHTML = helpTexts[level] || "Seleziona un livello e poi cliccami.";
+  document.getElementById("helpPopup").style.display = "block";
+});
+
+// chiudi popup
+document.getElementById("closeHelp").addEventListener("click", () => {
+  document.getElementById("helpPopup").style.display = "none";
+});
