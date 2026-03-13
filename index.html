@@ -192,21 +192,20 @@ fullscreenBtn.addEventListener("click", () => {
     applyScaling();
 });
 
-/* -------------------- TORNA AL SITO -------------------- */
+/* -------------------- TORNA AL SITO (METODO COMPATIBILE GOOGLE SITES) -------------------- */
 
 const backBtn = document.getElementById("backBtn");
-const ref = document.referrer;
 
-// Dominio del tuo Google Sites
-const dominio = "sites.google.com";
+// Legge i parametri dell'URL
+const params = new URLSearchParams(window.location.search);
 
-// URL esatto dove vuoi tornare
-const returnURL = "https://sites.google.com/view/il-mio-primo-sito-wigor2869/test2";
-
-// Se provieni dal tuo sito → mostra il bottone
-if (ref.includes(dominio)) {
+// Se l'URL contiene ?from=sites → mostra il bottone
+if (params.get("from") === "sites") {
     backBtn.style.display = "block";
 }
+
+// URL esatto del tuo sito
+const returnURL = "https://sites.google.com/view/il-mio-primo-sito-wigor2869/test2";
 
 // Quando clicchi
 backBtn.addEventListener("click", () => {
@@ -223,7 +222,6 @@ backBtn.addEventListener("click", () => {
 
 </body>
 </html>
-
 
 
 
