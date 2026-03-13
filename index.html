@@ -49,6 +49,22 @@ html, body {
     cursor: pointer;
 }
 
+/* Bottone torna al sito */
+#backBtn {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 99999;
+    padding: 12px 16px;
+    font-size: 22px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    cursor: pointer;
+    display: none;
+}
+
 /* Wrapper del gioco */
 #frameWrapper {
     position: absolute;
@@ -86,6 +102,7 @@ html, body {
 <div id="deviceTest"></div>
 
 <button id="fullscreenBtn">⛶</button>
+<button id="backBtn">⬅️ Torna al sito</button>
 
 <!-- Contenitore fullscreen simulato -->
 <div id="fakeFullscreen"></div>
@@ -101,14 +118,11 @@ let isFakeFullscreen = false;
 function applyScaling() {
 
     const wrapper = document.getElementById("frameWrapper");
-    const testBox = document.getElementById("deviceTest");
 
     const isFullscreenPage = isFakeFullscreen;
 
     const realWidth = screen.width;
     const realHeight = screen.height;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
 
     const minSide = Math.min(realWidth, realHeight);
     const dpr = window.devicePixelRatio;
@@ -152,17 +166,12 @@ function applyScaling() {
     /* RICONOSCIMENTO DISPOSITIVO */
     const isSmartphone = (minSide <= 500 && dpr >= 2);
     const isTablet = (minSide <= 1100 && dpr >= 1.5);
-    const isPC = (!isSmartphone && !isTablet);
 
     let scaleX;
     let scaleY;
-    let deviceType;
 
     /* SMARTPHONE */
     if (isSmartphone) {
-
-        deviceType = isPortrait ? "📱 Cell verticale" : "📱 Cell orizzontale";
-
         if (isPortrait) {
             scaleX = isFullscreenPage ? scaleCellPortraitX_full : scaleCellPortraitX_sites;
             scaleY = isFullscreenPage ? scaleCellPortraitY_full : scaleCellPortraitY_sites;
@@ -174,9 +183,6 @@ function applyScaling() {
 
     /* TABLET */
     else if (isTablet) {
-
-        deviceType = isPortrait ? "📲 Tablet verticale" : "📲 Tablet orizzontale";
-
         if (isPortrait) {
             scaleX = isFullscreenPage ? scaleTabletPortraitX_full : scaleTabletPortraitX_sites;
             scaleY = isFullscreenPage ? scaleTabletPortraitY_full : scaleTabletPortraitY_sites;
@@ -188,17 +194,12 @@ function applyScaling() {
 
     /* PC */
     else {
-
-        deviceType = "💻 PC";
-
         scaleX = isFullscreenPage ? scalePC_full_X : scalePC_sites_X;
         scaleY = isFullscreenPage ? scalePC_full_Y : scalePC_sites_Y;
     }
 
-    /* CENTRATURA STABILE */
     wrapper.style.transformOrigin = "top center";
     wrapper.style.transform = `translateX(-50%) scaleX(${scaleX}) scaleY(${scaleY})`;
-
 }
 
 window.addEventListener("load", applyScaling);
@@ -213,36 +214,51 @@ fullscreenBtn.addEventListener("click", () => {
 
     if (!isFakeFullscreen) {
 
-        /* ENTRA NEL FULLSCREEN SIMULATO */
         fakeFS.style.display = "block";
         fakeFS.appendChild(wrapper);
         fullscreenBtn.textContent = "✕";
         isFakeFullscreen = true;
 
-        /* 🔥 FIX TILT TABLET: disattiva pinch-to-zoom nel fullscreen simulato */
         document.body.style.touchAction = "none";
 
         applyScaling();
 
     } else {
 
-        /* ESCI DAL FULLSCREEN SIMULATO */
         fakeFS.style.display = "none";
         document.body.appendChild(wrapper);
         fullscreenBtn.textContent = "⛶";
         isFakeFullscreen = false;
 
-        /* 🔥 Riattiva pinch-to-zoom */
         document.body.style.touchAction = "auto";
 
         applyScaling();
     }
 });
+
+/* -------------------- BOTTONE TORNA AL SITO -------------------- */
+
+const backBtn = document.getElementById("backBtn");
+const ref = document.referrer;
+
+// Sostituisci con il dominio del tuo sito
+const dominio = "TUO_DOMINIO";
+
+if (ref.includes(dominio)) {
+    backBtn.style.display = "block";
+}
+
+backBtn.addEventListener("click", () => {
+    window.close();
+
+    setTimeout(() => {
+        window.location.href = "https://" + dominio;
+    }, 200);
+});
 </script>
 
 </body>
 </html>
-
 
 
 
