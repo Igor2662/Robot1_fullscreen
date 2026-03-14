@@ -1701,7 +1701,7 @@ document.getElementById('runPath').onclick = async () => {
     const seqDivs = document.getElementById('pathSequence').children;
 
     if (!correctPath || correctPath.length === 0) {
-        showMessage("Prima carica un percorso JSON.");
+        showMessage("Puoi anche caricare un file JSON.");
         return;
     }
 
@@ -1857,7 +1857,7 @@ document.getElementById('pathFile').onchange = (e) => {
 
 document.getElementById('randomPath').onclick = () => {
     if (!loadedPaths || loadedPaths.length === 0) {
-        showMessage("Prima importa un file JSON con percorsi.");
+        showMessage("Puoi anche importare un file JSON.");
         return;
     }
 
