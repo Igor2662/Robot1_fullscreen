@@ -1289,6 +1289,22 @@ const builtInPaths = [
             {x:1, y:2}
         ]
     },
+	
+    {
+      "name": "Tema - Numero 3",
+      "path": [
+        { "x": 0, "y": 0, "label": "1" },
+        { "x": 1, "y": 0, "label": "2" },
+        { "x": 2, "y": 0, "label": "3" },
+        { "x": 2, "y": 1, "label": "4" },
+        { "x": 1, "y": 1, "label": "5" },
+        { "x": 0, "y": 1, "label": "6" },
+        { "x": 0, "y": 2, "label": "7" },
+        { "x": 1, "y": 2, "label": "8" },
+        { "x": 2, "y": 2, "label": "9🏆" }
+      ]
+    },	
+	
     {
         name: "Zig-Zag",
         path: [
@@ -1473,7 +1489,7 @@ function loadLevel4Path(data) {
         if (!cellDiv) return;
 
         cellDiv.style.backgroundColor = 'lightgreen';
-        cellDiv.textContent = (index + 1).toString();
+        cellDiv.textContent = cell.label ?? (index + 1).toString();
         cellDiv.style.fontWeight = "bold";
         cellDiv.style.fontSize = "16px";
     });
@@ -1704,21 +1720,18 @@ document.getElementById('runPath').onclick = async () => {
         return;
     }
 
-    // Costruisci sequenza di azioni dal DOM
+    // --- COSTRUISCI SEQUENZA DI AZIONI DAL DOM ---
     const playerPath = [];
     for (let div of seqDivs) {
         const action = div.dataset.action;
         const val = parseInt(div.querySelector('input').value) || 1;
-        for (let i = 0; i < val; i++) {
-            playerPath.push(action);
-        }
+        for (let i = 0; i < val; i++) playerPath.push(action);
     }
 
-    let correct = true;
     const wrongCells = [];
-	let moveIndex = 1;
+    let moveIndex = 1; // parte dalla seconda cella del percorso
 
-    // --- Funzione di supporto per orientamento sbagliato ---
+    // --- FUNZIONE DI SUPPORTO PER ORIENTAMENTO SBAGLIATO ---
     async function wrongOrientationLevel4(wrongCellsArray) {
         try { soundError.play(); } catch(e){}
         robotSpeak("Orientamento sbagliato! Non posso procedere in questa direzione.", document.getElementById('message'));
@@ -1731,27 +1744,29 @@ document.getElementById('runPath').onclick = async () => {
         }
 
         // ripristina colori celle sbagliate
-        wrongCellsArray.forEach(cell => {
-            cell.style.backgroundColor = cell.dataset.originalColor || "";
-            delete cell.dataset.originalColor;
+        wrongCellsArray.forEach(c => {
+            c.style.backgroundColor = c.dataset.originalColor || "";
+            delete c.dataset.originalColor;
         });
-        wrongCellsArray.length = 0; // svuota array
+        wrongCellsArray.length = 0;
 
         // torna al punto di partenza
         player.r = startY;
         player.c = startX;
-        orientation = 'S'; // oppure orientamento iniziale del livello
+        orientation = 'S';
         updatePlayer();
 
-        await sleep(200); // piccolo delay opzionale
+        await sleep(200);
     }
 
-    // --- Esecuzione percorso ---
+    // --- ESECUZIONE PERCORSO ---
+    let correct = true;
+
     for (let stepIndex = 0; stepIndex < playerPath.length; stepIndex++) {
         const action = playerPath[stepIndex];
 
-        // --- Controllo orientamento ---
-        if (action !== 'RL' && action !== 'RR') {
+        // Controllo orientamento
+        if (!['RL','RR'].includes(action)) {
             let requiredOrientation;
             if (action === 'R' || action === 'J') requiredOrientation = 'E';
             else if (action === 'L') requiredOrientation = 'W';
@@ -1764,14 +1779,14 @@ document.getElementById('runPath').onclick = async () => {
             }
         }
 
-        // --- Esegui azione ---
+        // Esegui azione
         await moveRobot(action, "L4");
 
-        // --- Salta rotazioni per controllo celle ---
-        if (action === 'RL' || action === 'RR') continue;
+        // Salta rotazioni per controllo celle
+        if (['RL','RR'].includes(action)) continue;
 
-        // --- Controllo posizione solo se c'è un expected valido ---
-        const expected = correctPath[moveIndex]; // usa stepIndex, non stepIndex+1
+        // Controlla posizione solo se c'è un expected valido
+        const expected = correctPath[moveIndex];
         if (!expected || player.c !== expected.x || player.r !== expected.y) {
             correct = false;
             const cell = document.getElementById(`cell-${player.r}-${player.c}`);
@@ -1781,27 +1796,34 @@ document.getElementById('runPath').onclick = async () => {
                 wrongCells.push(cell);
             }
         }
-		moveIndex++;
+        moveIndex++;
     }
 
-    // --- Messaggio finale ---
+    // --- MESSAGGIO FINALE ---
     if (correct && player.r === correctPath[correctPath.length - 1].y && player.c === correctPath[correctPath.length - 1].x) {
         showMessage("✅ Percorso corretto!");
         await robotSpeak("Percorso completato correttamente!", document.getElementById('message'));
+
+        // 🎉 CELEBRAZIONE PER LIVELLO 4
+        celebrateWithImage();
     } else {
         await robotSpeak("Percorso non corretto, ritorno al punto di partenza.", document.getElementById('message'));
 
-        // attendi 2 secondi prima di ripristinare colori
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // evidenzia temporaneamente celle sbagliate
+        for (let cell of wrongCells) cell.style.backgroundColor = "red";
+
+        await sleep(2000);
+
+        // ripristina colori celle sbagliate
         wrongCells.forEach(cell => {
             cell.style.backgroundColor = cell.dataset.originalColor || "";
             delete cell.dataset.originalColor;
         });
 
+        // reset robot
         resetRobot();
     }
 };
-
     // CLEAR
     document.getElementById('clearPath').onclick = () => {
         document.getElementById('pathSequence').innerHTML = '';
