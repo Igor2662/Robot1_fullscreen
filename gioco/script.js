@@ -21,6 +21,79 @@ let traps = [];
 let executing = false;
 let currentLevel = 1;
 
+// per tastierino numerico su LIM
+let activeInput = null;
+
+function attachNumpad(input) {
+  input.addEventListener("click", () => {
+    activeInput = input;
+    document.getElementById("numPad").classList.remove("hidden");
+  });
+}
+
+// gestione bottoni
+document.querySelectorAll("#numPad button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    if (!activeInput) return;
+
+    const value = btn.textContent;
+
+    if (value === "C") {
+      activeInput.value = "";
+    } 
+    else if (value === "OK") {
+      document.getElementById("numPad").classList.add("hidden");
+      activeInput = null;
+    } 
+    else {
+      activeInput.value += value;
+    }
+  });
+});
+
+// per scalare il gioco e adattarlo automaticamente allo schermo oppure quella sotto
+
+function scaleIfNeeded() {
+  const wrapper = document.getElementById('app-wrapper');
+  if (!wrapper) return; // 🔥 evita errori
+
+  const scaleX = window.innerWidth / wrapper.offsetWidth;
+  const scaleY = window.innerHeight / wrapper.offsetHeight;
+
+  const scale = Math.min(scaleX, scaleY, 1);
+
+  wrapper.style.transform = `scale(${scale})`;
+  wrapper.style.transformOrigin = "top left";
+}
+
+window.addEventListener('load', scaleIfNeeded);
+window.addEventListener('resize', scaleIfNeeded);
+
+/* questa alternativa centra il gioco
+function scaleIfNeeded() {
+  const wrapper = document.getElementById('app-wrapper');
+  if (!wrapper) return;
+
+  const scaleX = window.innerWidth / wrapper.offsetWidth;
+  const scaleY = window.innerHeight / wrapper.offsetHeight;
+
+  const scale = Math.min(scaleX, scaleY, 1);
+
+  wrapper.style.transform = `scale(${scale})`;
+
+  // 🔥 CENTRATURA PERFETTA
+  const offsetX = (window.innerWidth - wrapper.offsetWidth * scale) / 2;
+  const offsetY = (window.innerHeight - wrapper.offsetHeight * scale) / 2;
+
+  wrapper.style.transformOrigin = "top left";
+  wrapper.style.position = "absolute";
+  wrapper.style.left = `${offsetX}px`;
+  wrapper.style.top = `${offsetY}px`;
+}
+
+window.addEventListener('load', scaleIfNeeded);
+window.addEventListener('resize', scaleIfNeeded);
+*/
 
 // LEVEL 3 state
 let allStories = [
@@ -28,7 +101,7 @@ let allStories = [
         story: "Ho voglia di un gelato.",
         sequence: ["💰", "🚲", "🏪", "🍦"],
         grid: [
-            { x: 2, y: 3, icon: "💰" },
+            { x: 2, y: 3, icon: "💰", hintOrder: 1 },
             { x: 5, y: 3, icon: "🚲" },
             { x: 6, y: 7, icon: "🏪" },
             { x: 8, y: 4, icon: "🍦" }
@@ -38,7 +111,7 @@ let allStories = [
         story: "Devo andare a scuola.",
         sequence: ["⏰", "🚶‍♂️", "🚌", "🏫"],
         grid: [
-            { x: 1, y: 2, icon: "⏰" },
+            { x: 1, y: 2, icon: "⏰" , hintOrder: 1},
             { x: 3, y: 2, icon: "🚶‍♂️" },
             { x: 4, y: 5, icon: "🚌" },
             { x: 7, y: 6, icon: "🏫" }
@@ -48,7 +121,7 @@ let allStories = [
         story: "Preparo una torta.",
         sequence: ["🛒", "🥚", "🥣", "🎂"],
         grid: [
-            { x: 0, y: 1, icon: "🛒" },
+            { x: 0, y: 1, icon: "🛒" , hintOrder: 1},
             { x: 2, y: 4, icon: "🥚" },
             { x: 5, y: 6, icon: "🥣" },
             { x: 8, y: 2, icon: "🎂" }
@@ -74,6 +147,29 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
 function normEmoji(e) {
     return [...String(e)].join('');
 }
+
+function getCellValue(cell){
+    if(!cell) return '';
+
+    // cerca un nodo testo puro che non sia span hint
+    for (let node of cell.childNodes) {
+        if(node.nodeType === Node.TEXT_NODE && node.nodeValue.trim() !== '') {
+            return node.nodeValue.trim();
+        }
+    }
+
+    // fallback: unisce tutti i nodi testo ignorando span con hint-number
+    let text = '';
+    cell.childNodes.forEach(n => {
+        if(n.nodeType === Node.TEXT_NODE) text += n.nodeValue;
+        else if(n.nodeType === Node.ELEMENT_NODE && !n.classList.contains('hint-number')) {
+            text += n.textContent;
+        }
+    });
+
+    return text.trim();
+}
+
 // --- COLLEGA NUOVA PAROLA L1 AL COMPORTAMENTO DI L2 ---
 
 // Bottone nuova parola L1
@@ -118,22 +214,35 @@ function placeLettersRandom(word){
   }
 }
 
-function placeSymbolsRandom(symbols){
-  // symbols is array of emoji strings
-  letters = [];
-  const taken = new Set(); taken.add('0-0');
-  let idx=0;
-  while(idx < symbols.length){
-    const r = Math.floor(Math.random()*rows);
-    const c = Math.floor(Math.random()*cols);
-    const key = `${r}-${c}`;
-    if(taken.has(key)) continue;
-    taken.add(key);
-    // ensure we store string (guard against objects)
-    const ch = (typeof symbols[idx] === 'string') ? symbols[idx] : (symbols[idx].icon || String(symbols[idx]));
-    letters.push({ r, c, ch: normEmoji(ch) });
-    idx++;
-  }
+function placeSymbolsRandom(symbols) {
+    if (!symbols || symbols.length === 0) return;
+
+    letters = []; // resetta letters
+    const taken = new Set(); 
+    taken.add('0-0'); // cella iniziale del player
+
+    let idx = 0;
+    while (idx < symbols.length) {
+        const r = Math.floor(Math.random() * rows);
+        const c = Math.floor(Math.random() * cols);
+        const key = `${r}-${c}`;
+        if (taken.has(key)) continue;
+        taken.add(key);
+
+        let symbol = symbols[idx];
+        let displayIcon = symbol;
+        let hintNumber = null;
+
+        // separa eventuale numero hint
+        const match = /^(\d+)(.+)/.exec(symbol);
+        if (match) {
+            hintNumber = match[1];
+            displayIcon = match[2];
+        }
+
+        letters.push({ r, c, ch: displayIcon, hint: hintNumber });
+        idx++;
+    }
 }
 
 function placeTrapsRandom(n){
@@ -151,30 +260,46 @@ function placeTrapsRandom(n){
   }
 }
 // ---------- RENDER LETTERS / EMOJI / TRAPS ----------
-function renderLettersAndTraps(mode="L2"){
-  for(let r=0;r<rows;r++) 
-    for(let c=0;c<cols;c++){
-      const cell = grid[r][c];
-      cell.classList.remove('letter','emoji','trap');
-      cell.textContent='';
+// ---------- RENDER LETTERS / EMOJI / TRAPS ----------
+function renderLettersAndTraps(mode="L3") {
+    for(let r=0; r<rows; r++) {
+        for(let c=0; c<cols; c++){
+            const cell = grid[r][c];
+            cell.classList.remove('letter','emoji','trap');
+            cell.textContent='';
+        }
     }
 
-  letters.forEach(l=>{
-    const cell = grid[l.r][l.c];
-    if(!cell) return;
-    if(mode === "L2") cell.classList.add('letter');
-    else if(mode === "L3") cell.classList.add('emoji');
-    cell.textContent = normEmoji(l.ch);
-  });
+    letters.forEach(l=>{
+        const cell = grid[l.r][l.c];
+        if(!cell) return;
 
-  traps.forEach(t=>{
-    const cell = grid[t.r][t.c];
-    if(!cell) return;
-    cell.classList.add('trap');
-    cell.textContent = ""; 
-  });
+        if(mode === "L2") cell.classList.add('letter');
+        else if(mode === "L3") cell.classList.add('emoji');
+
+        // hint number
+        if(l.hint !== undefined && l.hint !== null){
+            const hintEl = document.createElement('span');
+            hintEl.className = 'hint-number';
+            hintEl.textContent = l.hint;
+            hintEl.style.fontSize = '0.7em';
+            hintEl.style.color = '#555';
+            hintEl.style.marginRight = '2px';
+            cell.appendChild(hintEl);
+        }
+
+        // emoji
+        const emojiNode = document.createTextNode(normEmoji(l.ch));
+        cell.appendChild(emojiNode);
+    });
+
+    traps.forEach(t=>{
+        const cell = grid[t.r][t.c];
+        if(!cell) return;
+        cell.classList.add('trap');
+        cell.textContent = "";
+    });
 }
-
 // resetta il colore nei livelli 1-3
 function resetTitle() {
     const title = document.getElementById('titleStatic');
@@ -331,82 +456,106 @@ function softResetAfterError(mode="L3") {
 
 
 // ---------- MOVEMENT & CHECK ----------
+// ---------- MOVEMENT & CHECK (unificata L1, L2, L3) ----------
 async function checkCellAfterMove(mode){
-  const cell = grid[player.r] && grid[player.r][player.c];
-  const msgEl = document.getElementById('message');
+    const cell = grid[player.r] && grid[player.r][player.c];
+    const msgEl = document.getElementById('message');
+    if(!cell) return { ok:true };
 
-  if(!cell) return { ok:true };
+    // -------- TRAPPOLA (tutti i livelli) --------
+    if(cell.classList.contains('trap')){
+        try { soundError.play(); } catch(e){}
+        robotSpeak("Oh no, sono caduto in una trappola!", msgEl);
 
-  // TRAPPOLA — versione aggiornata come in L2
-  if (cell.classList.contains('trap')) {
+        cell.classList.add('shake');
+        await sleep(1000);
+        cell.classList.remove('shake');
 
-      // disattivo movimento successivo
-      try { soundError.play(); } catch(e) {}
+        softResetAfterError(mode);
 
-      robotSpeak("Oh no, sono caduto in una trappola!", msgEl);
-
-      // aggiunge effetto shake alla cella trappola
-      cell.classList.add('shake');
-
-      // attende la fine dell’animazione (1s)
-      await sleep(1000);
-
-      // rimuove la classe shake
-      cell.classList.remove('shake');
-
-      // reset morbido (NON cancella lettere o progressi)
-      softResetAfterError(mode);
-
-      // dopo l'animazione torna alla posizione iniziale
-      player = { r: 0, c: 0 };
-      orientation = 'S';
-      updatePlayer();
-
-      return { ok:false, reason:'trap' };
-  }
-
-
-  // letter/icon in L1
-  if(mode === "L1" && cell.classList.contains('letter')){
-    const ch = cell.textContent;
-    const expected = targetWord[collected.length];
-    if(ch === expected){
-      collected.push(ch);
-      const slot = document.getElementById(`slot-${collected.length-1}`);
-      if(slot) slot.textContent = ch;
-      cell.classList.remove('letter');
-      cell.textContent='';
-      updatePlayer();
-      try{ soundCorrect.play(); }catch(e){}
-      if(collected.length === targetWord.length){
-        try{ soundSuccess.play(); }catch(e){}
-        robotSpeak("Hai completato la parola!", msgEl);
-        celebrateWithImage();
-      }
-    } else {
-        // Effetto visivo tipo L2: shake + flash
-        cell.classList.add("shake");
-
-        // Suono di errore
-        try { if (soundError) { soundError.currentTime = 0; soundError.play(); } } catch(e){}
-
-        // Messaggio vocale
-        robotSpeak("Oh no! Questa non è la lettera giusta!", msgEl);
-
-        // Attendi la fine dell’animazione shake (1s)
-        await new Promise(res => setTimeout(res, 1000));
-        cell.classList.remove("shake");
-
-        // Reset morbido come trappola in L3
+        // ritorno alla posizione iniziale
         player = { r:0, c:0 };
         orientation = 'S';
         updatePlayer();
 
-        return { ok:false, reason:'wrongLetter' };
+        return { ok:false, reason:'trap' };
     }
-      }
 
-  return { ok:true };
+    // -------- CELLA CON LETTERA / EMOJI --------
+    let ch = '';
+    if(cell.textContent.trim() !== ''){
+        // L1/L2 → lettera, L3 → emoji
+        if(mode === "L1" || mode === "L2"){
+            cell.childNodes.forEach(n => {
+                if(n.nodeType === Node.TEXT_NODE) ch += n.nodeValue;
+                else if(n.nodeType === Node.ELEMENT_NODE && !n.classList.contains('hint-number')){
+                    ch += n.textContent;
+                }
+            });
+            ch = ch.trim();
+        } else if(mode === "L3" && cell.classList.contains('emoji')){
+            // prendi solo il testo principale (ignora span hint)
+            const textNode = Array.from(cell.childNodes)
+                .find(n => n.nodeType === Node.TEXT_NODE);
+            ch = textNode ? textNode.nodeValue.trim() : '';
+        }
+    }
+
+    if(ch !== ''){
+        const expected = mode === "L3" ? targetIcons[collected.length] : targetWord[collected.length];
+        if((mode==="L3" && normEmoji(ch) === normEmoji(expected)) || (mode!=="L3" && ch === expected)){
+            collected.push(ch);
+            const slot = document.getElementById(`slot-${collected.length-1}`);
+            if(slot) slot.textContent = ch;
+
+            cell.classList.remove('letter','emoji');
+            cell.textContent = '';
+            updatePlayer();
+            try{ soundCorrect.play(); } catch(e){}
+
+            if(mode==="L3" ? collected.length === targetIcons.length : collected.length === targetWord.length){
+                try{ soundSuccess.play(); } catch(e){}
+                robotSpeak("Hai completato la sequenza!", msgEl);
+                celebrateWithImage();
+            }
+
+        } else {
+            // ❌ Lettera / emoji sbagliata
+            cell.classList.add("shake");
+            try { if(soundError){ soundError.currentTime=0; soundError.play(); } } catch(e){}
+            robotSpeak("Elemento sbagliato!", msgEl);
+            await sleep(1000);
+            cell.classList.remove("shake");
+
+            player = { r:0, c:0 };
+            orientation = 'S';
+            updatePlayer();
+
+            return { ok:false, reason:'wrongLetter' };
+        }
+    }
+
+    // -------- CELLA VUOTA --------
+    else if(cell.textContent.trim() === ''){
+        // L1: ignorare
+        if(mode==="L1") return { ok:true };
+
+        // L2/L3: avvisa e reset
+        try{ soundError.play(); } catch(e){}
+        robotSpeak("Sei finito su una cella vuota!", msgEl);
+
+        cell.classList.add('shake');
+        await sleep(1000);
+        cell.classList.remove('shake');
+
+        player = { r:0, c:0 };
+        orientation = 'S';
+        updatePlayer();
+
+        return { ok:false, reason:'empty' };
+    }
+
+    return { ok:true };
 }
 
 async function moveRight(n=1, mode="L1"){
@@ -464,7 +613,7 @@ function setupToolboxAndSequence() {
     const hint = document.createElement('div');
     hint.style.fontSize = '12px';
     hint.style.color = '#555';
-    hint.textContent = 'Trascina';
+    //hint.textContent = 'Trascina';
     el.appendChild(hint);
 
     toolbox.appendChild(el);
@@ -521,6 +670,8 @@ function setupToolboxAndSequence() {
 
           // 👉 Input compatibile con Chrome tablet
           const input = document.createElement('input');
+		  attachNumpad(input);
+          input.readOnly = true;
           input.type = 'text';
           input.inputMode = 'numeric';
           input.pattern = '[0-9]*';
@@ -804,15 +955,22 @@ async function executeSequenceFromContainer(containerId, mode="L2") {
 
     if(cell){
         // -------- CATTURA LETTERA/ICONA --------
-        const isCorrectCell = (mode==="L2" && cell.classList.contains('letter')) ||
+        const hasContent = cell.textContent.trim() !== '';
+
+        const isCorrectCell = (mode==="L2" && hasContent) ||
                               (mode==="L3" && cell.classList.contains('emoji'));
 
         if(isCorrectCell){
-            const ch = cell.textContent;
+            // prende SOLO l’emoji ignorando il numero
+            const textNode = Array.from(cell.childNodes)
+                .find(n => n.nodeType === Node.TEXT_NODE);
+
+            const ch = textNode ? textNode.nodeValue.trim() : '';
+			
             const expected = (mode==="L3" ? targetIcons[collected.length] : targetWord[collected.length]);
 
             if(normEmoji(ch) === normEmoji(expected)){
-                collected.push(ch);
+                collected.push(normEmoji(ch));
                 const slot = document.getElementById(`slot-${collected.length-1}`);
                 if(slot) slot.textContent = ch;
 
@@ -843,7 +1001,7 @@ async function executeSequenceFromContainer(containerId, mode="L2") {
         }
 
         // -------- CELLA VUOTA --------
-        else if(cell.classList.contains('empty')){
+        else if(cell.textContent.trim() === ''){
             try{ soundError.play(); }catch(e){}
             robotSpeak("Sei finito su una cella vuota!", msgEl);
 
@@ -1081,7 +1239,7 @@ function setupIconToolboxAndSequence(){
     const hint = document.createElement('div'); 
     hint.style.fontSize='12px'; 
     hint.style.color='#555'; 
-    hint.textContent='Trascina'; 
+    //hint.textContent='Trascina'; 
     el.appendChild(hint);
 
     iconToolbox.appendChild(el);
@@ -1136,6 +1294,8 @@ function setupIconToolboxAndSequence(){
 
           // 👉 Input compatibile con Chrome tablet
           const input = document.createElement('input');
+		  attachNumpad(input);
+          input.readOnly = true;
           input.type = 'text';
           input.inputMode = 'numeric';
           input.pattern = '[0-9]*';
@@ -1222,14 +1382,15 @@ function renderStory(story){
     const storyEl = document.getElementById('storyText'); 
     if(storyEl) storyEl.textContent = story.story || '';
 
-    // target icons
-    targetIcons = story.sequence.map(x => normEmoji(typeof x === 'string' ? x : (x.icon || String(x))));
+    // target icons: estrai solo l'emoji principale per il confronto
+    targetIcons = story.sequence.map(x => 
+        typeof x === 'string' ? x : (x.icon || String(x))
+    );
 
     // ricrea SEMPRE gli slot per il livello 3
     const cw = document.getElementById('collectedWord'); 
     if (cw) {
-        cw.innerHTML = ""; // ← SVUOTA SEMPRE GLI SLOT PRECEDENTI
-
+        cw.innerHTML = ""; // svuota slot precedenti
         for (let i = 0; i < targetIcons.length; i++) {
             const s = document.createElement('div');
             s.className = 'letter-slot';
@@ -1238,10 +1399,18 @@ function renderStory(story){
         }
     }
 
-
-
     buildGrid();
-    placeSymbolsRandom(targetIcons);
+
+    // prepara simboli con eventuali hint numerici
+    const symbolsWithHint = story.grid.map(cell => {
+        if(cell.hintOrder !== undefined && cell.hintOrder !== null) {
+            return `${cell.hintOrder}${cell.icon}`;
+        }
+        return cell.icon;
+    });
+
+    placeSymbolsRandom(symbolsWithHint);
+
     placeTrapsRandom(parseInt((document.getElementById('trapCount') && document.getElementById('trapCount').value) || 6));
     renderLettersAndTraps("L3");
     updatePlayer();
@@ -1610,7 +1779,7 @@ document.getElementById('btnLevel4')?.addEventListener('click', () => {
         const hint = document.createElement('div');
         hint.style.fontSize = '12px';
         hint.style.color = '#555';
-        hint.textContent = 'Trascina';
+        //hint.textContent = 'Trascina';
         el.appendChild(hint);
 
         pathToolbox.appendChild(el);
@@ -1660,6 +1829,8 @@ document.getElementById('btnLevel4')?.addEventListener('click', () => {
             block.appendChild(ic);
 
             const input = document.createElement('input');
+			attachNumpad(input);
+            input.readOnly = true;
             input.type = 'text';
             input.inputMode = 'numeric';
             input.pattern = '[0-9]*';
@@ -1947,8 +2118,8 @@ async function celebrateWithImage() {
     spawnStarsEpic(200); // tante stelle
 
     // 🔧 tempi configurabili
-    const freezeTime = 59000;     // fermo immagine: 4 secondi
-    const overlayDuration = 7000; // totale: overlay visibile 6 secondi
+    const freezeTime = 69000;     // fermo immagine: 4 secondi 59000
+    const overlayDuration = 4000; // totale: overlay visibile 6 secondi 7000
 
     // ⏱ fermo immagine: il gioco riparte dopo freezeTime
     setTimeout(() => {

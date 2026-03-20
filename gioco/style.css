@@ -1,12 +1,12 @@
 body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;margin:0;background:#f4f6f8;color:#111}
-h1{margin:18px;text-align:center}
+h1{margin:10px;text-align:center}
 #mainContainer{display:flex;gap:4px;align-items:flex-start;justify-content:flex-start;padding:12px 16px}
 #leftPanel{display:flex;flex-direction:column;align-items:flex-start;margin-right:0}
-#rightPanel{width:300px;padding-left:0;margin-left:0}
+#rightPanel{width:300px;padding-left:0;margin-left:0} /* dimensioni bottoni direzionali L1 */
 
 /* grid */
-#grid{display:grid;grid-template-columns:repeat(10,64px);gap:8px;background:transparent;padding:8px}
-.cell{width:64px;height:64px;border-radius:6px;border:1px solid #d6d6d6;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:32px}
+#grid{display:grid;grid-template-columns:repeat(10, min(64px, 8vw));gap:2px;background:transparent;padding:8px}
+.cell{width:58px;height:58px;border-radius:6px;border:1px solid #d6d6d6;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:32px}
 .cell.empty{background:#fff}
 .cell.letter{background:#dff3d9}
 .cell.trap{background:#ff7f7f;color:#fff}
@@ -15,10 +15,10 @@ h1{margin:18px;text-align:center}
 
 /* collected word / icons */
 .letter-row, .icon-row{display:flex;gap:8px;justify-content:flex-start;margin-bottom:8px}
-.letter-slot, .icon-slot{width:64px;height:64px;border:2px dashed #bbb;background:#f7f7f7;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700}
+.letter-slot, .icon-slot{width:58px;height:58px;border:2px dashed #bbb;background:#f7f7f7;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700}
 
-/* right panel toolbox */
-.toolbox{display:flex;flex-wrap:wrap;gap:8px;background:#fff;padding:8px;border-radius:8px;border:1px solid #e0e0e0; width:525px}
+/* right panel toolbox*/
+.toolbox{display:flex;flex-wrap:wrap;gap:8px;background:#fff;padding:8px;border-radius:8px;border:1px solid #e0e0e0; width:455px} 
 .tool{width:64px;height:64px;border-radius:10px;padding:6px 6px;cursor:grab;user-select:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
 .tool .icon{font-size:32px}
 .tool input{width:48px;text-align:center}
@@ -39,10 +39,11 @@ h1{margin:18px;text-align:center}
 .seq-block .remove{background:transparent;border:none;color:#c44;cursor:pointer;font-size:18px}
 
 /* icon blocks (level3) - match visuals/size of level2 toolbox/blocks */
-.icon-tool, .tool { width:54px; height:54px; border-radius:10px; padding:6px; display:flex; align-items:center; justify-content:center; cursor:grab; background:#fff; border:1px solid #d0d0d0; }
+.icon-tool, .tool { width:44px; height:44px; border-radius:10px; padding:6px; display:flex; align-items:center; justify-content:center; cursor:grab; background:#fff; border:1px solid #d0d0d0; }
 .icon-tool .icon{ font-size:30px; }
-.icon-seq-block, .seq-block { width:60px; height:85px; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:#fff; border:1px solid #d0d0d0; position:relative; }
+.icon-seq-block { width:54px; height:85px; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:#fff; border:1px solid #d0d0d0; position:relative; }
 .icon-seq-block .icon{ font-size:32px; }
+.seq-block { width:48px; height:85px; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:#fff; border:1px solid #d0d0d0; position:relative; }
 .icon-seq-block input{ width:48px; text-align:center; margin-top:6px; }
 .icon-seq-block input { font-size: 20px; }
 
@@ -263,6 +264,8 @@ body.level3 #iconSequence {
   display: flex !important;
 }
 
+
+
 /* --- NASCONDI TUTTO IL CONTENUTO DEL LIVELLO 4 DI DEFAULT --- */
 #level4 h3,
 #level4 h4,
@@ -319,3 +322,64 @@ body.level4 .settings {
   transform: scale(0.97);
 }
 
+/* ===== TASTIERINO NUMERICO LIM ===== */
+
+.numpad {
+  position: fixed;
+  /*bottom: 20px;*/
+  top: 45px; /* 🔥 in alto */
+  right: 90px; /* 🔥 a destra */
+  left: auto; /* importante */
+  transform: translateX(-0%);
+  background: white;
+  border: 2px solid #333;
+  border-radius: 12px;
+  padding: 8px;
+  z-index: 999999;
+  box-shadow: 0 0 20px rgba(0,0,0,0.4);
+}
+
+.hidden {
+  display: none;
+}
+
+.numpad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 50px); /* 🔥 più piccolo */
+  gap: 6px;
+}
+
+.numpad button {
+  font-size: 19px; /* 🔥 più piccolo */
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background: #2196F3;
+  cursor: pointer;
+}
+
+.numpad button:active {
+  background: #90caf9;
+  transform: scale(0.95);
+}
+
+/* pulsanti speciali */
+#numClear {
+  background: #F44336;  /* 🔴 rosso */
+}
+
+#numOk {
+ background: #4CAF50;  /* 🟢 verde */
+}
+
+/*riduce lo spazio tra il box delle ione e quello della sequnza */
+#level2 h4 {
+  margin: 0;
+}
+
+#level3 h4 {
+  margin: 0;
+}
+#app-wrapper {
+  transform: scale(0.3); /* scala tutto il gioco)
+}

@@ -7,6 +7,10 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
+<div id="app-wrapper">  <!-- serve per scalare il gioco -->
+  
+</div>
   <div id="celebrationOverlay">
       <div id="celebrationContent">
           <h1 id="celebrationText">COMPLIMENTI!</h1>
@@ -59,12 +63,12 @@
       </div>
 
       <!-- LIVELLO 2 -->
-      <div id="level2" class="level" style="display:none; margin-top:12px;">
-        <h3>Costruisci sequenza (trascina i blocchi)</h3>
+      <div id="level2" class="level" style="display:none; margin-top:8px;">
+        <!-- <h3>Costruisci sequenza (trascina i blocchi)</h3> -->
 
         <div id="toolbox" class="toolbox"></div>
 
-        <h4>Sequenza (trascina qui sotto)</h4>
+        <h4> Sequenza (trascina qui gli indicatori)</h4>
         <div id="sequence" class="sequence"></div>
 
         <div class="seq-buttons">
@@ -80,11 +84,11 @@
 
       <!-- LIVELLO 3 -->
       <div id="level3" class="level" style="display:none; margin-top:12px;">
-        <h3>Costruisci sequenza di icone</h3>
+        <!-- <h3>Costruisci sequenza di icone</h3> -->
 
         <div id="iconToolbox" class="toolbox"></div>
 
-        <h4>Sequenza icone (trascina qui sotto)</h4>
+        <h4>Sequenza(trascina qui gli indicatori)</h4>
         <div id="iconSequence" class="sequence"></div>
 
         <div class="seq-buttons">
@@ -100,6 +104,7 @@
       <!-- LIVELLO 4 -->
       <div id="level4" class="level" style="display:none; margin-top:12px;">
         <h3>Programma il robot per seguire il percorso</h3>
+
 
         <div id="pathToolbox" class="toolbox"></div>
 
@@ -149,10 +154,24 @@
   <button id="closeHelp" style="margin-top:15px;">Chiudi</button>
 </div>
 
+<!-- tastierino numerico -->
+<div id="numPad" class="numpad hidden">
+  <div class="numpad-grid">
+    <button>1</button><button>2</button><button>3</button>
+    <button>4</button><button>5</button><button>6</button>
+    <button>7</button><button>8</button><button>9</button>
+    <button id="numClear">C</button>
+    <button>0</button>
+    <button id="numOk">OK</button>
+  </div>
+</div>
+
+
 <script src="script.js"></script>
 
 <div id="trash" style="width:0;height:0;overflow:hidden;"></div>
 
+</div> <!-- chiude il wrapper -->
 </body>
 </html>
 
