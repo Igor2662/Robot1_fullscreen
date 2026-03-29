@@ -7,7 +7,11 @@ const soundCorrect = safeAudio('correct.mp3');
 const soundSuccess = safeAudio('success.mp3');
 const victorySound = safeAudio('sounds/victory.mp3');
 if(victorySound && victorySound.volume !== undefined) victorySound.volume = 0.8;
+const stepSound = safeAudio('passi.mp3');
+const turnSound = safeAudio('ruota.mp3');
 
+if(stepSound) stepSound.volume = 0.5;
+if(turnSound) turnSound.volume = 0.6;
 const rows = 7;
 const cols = 10;
 let grid = [];
@@ -20,6 +24,22 @@ let letters = [];
 let traps = [];
 let executing = false;
 let currentLevel = 1;
+
+// per suono passi e rotazioni robot
+function playStep() {
+  try {
+    stepSound.currentTime = 0;
+    stepSound.play();
+  } catch(e){}
+}
+
+function playTurn() {
+  try {
+    turnSound.currentTime = 0;
+    turnSound.play();
+  } catch(e){}
+}
+
 
 // per tastierino numerico su LIM
 let activeInput = null;
@@ -560,26 +580,26 @@ async function checkCellAfterMove(mode){
 
 async function moveRight(n=1, mode="L1"){
   if(orientation!=='E'){ robotSpeak("Devi guardare a destra!", document.getElementById('message')); try{ soundError.play(); }catch(e){}; return; }
-  for(let i=0;i<n;i++){ player.c = Math.min(cols-1, player.c+1); updatePlayer(); const r = await checkCellAfterMove(mode); if(!r.ok) return; }
+  for(let i=0;i<n;i++){ player.c = Math.min(cols-1, player.c+1); updatePlayer();playStep(); const r = await checkCellAfterMove(mode); if(!r.ok) return; }
 }
 async function moveLeft(n=1, mode="L1"){
   if(orientation!=='W'){ robotSpeak("Devi guardare a sinistra!", document.getElementById('message')); try{ soundError.play(); }catch(e){}; return; }
-  for(let i=0;i<n;i++){ player.c = Math.max(0, player.c-1); updatePlayer(); const r = await checkCellAfterMove(mode); if(!r.ok) return; }
+  for(let i=0;i<n;i++){ player.c = Math.max(0, player.c-1); updatePlayer();playStep(); const r = await checkCellAfterMove(mode); if(!r.ok) return; }
 }
 async function moveUp(n=1, mode="L1"){
   if(orientation!=='N'){ robotSpeak("Devi guardare in su!", document.getElementById('message')); try{ soundError.play(); }catch(e){}; return; }
-  for(let i=0;i<n;i++){ player.r = Math.max(0, player.r-1); updatePlayer(); const r = await checkCellAfterMove(mode); if(!r.ok) return; }
+  for(let i=0;i<n;i++){ player.r = Math.max(0, player.r-1); updatePlayer();playStep(); const r = await checkCellAfterMove(mode); if(!r.ok) return; }
 }
 async function moveDown(n=1, mode="L1"){
   if(orientation!=='S'){ robotSpeak("Devi guardare in giù!", document.getElementById('message')); try{ soundError.play(); }catch(e){}; return; }
-  for(let i=0;i<n;i++){ player.r = Math.min(rows-1, player.r+1); updatePlayer(); const r = await checkCellAfterMove(mode); if(!r.ok) return; }
+  for(let i=0;i<n;i++){ player.r = Math.min(rows-1, player.r+1); updatePlayer(); playStep(); const r = await checkCellAfterMove(mode); if(!r.ok) return; }
 }
 async function jump(n=1, mode="L1"){ await moveRight(n, mode); }
 
 function rotate(dir){
   if(dir==='R' || dir==='rotR'){ orientation = orientation==='N' ? 'E' : orientation==='E' ? 'S' : orientation==='S' ? 'W' : 'N'; }
   else { orientation = orientation==='N' ? 'W' : orientation==='W' ? 'S' : orientation==='S' ? 'E' : 'N'; }
-  updatePlayer();
+  updatePlayer(); playTurn(); // 🔄 suono del robot quando ruota
 }
 
 // ---------- SEQUENCE TOOLBOX (L2) ----------
@@ -821,6 +841,7 @@ async function executeSequenceBombFromContainer(containerId, mode="L2") {
             else if(action==='rotL' || action==='RL') rotate('L');
 
             updatePlayer();
+			//playStep(); // suono dei passi del robot
             await sleep(350);
 
             const cell = grid[player.r][player.c];
@@ -908,29 +929,30 @@ async function executeSequenceFromContainer(containerId, mode="L2") {
             // Controllo orientamento rigido
             if(action==='moveRight' || action==='R'){
                 if(orientation!=='E'){ await wrongOrientation(startR,startC,startOrientation); return; }
-                player.c = Math.min(cols-1, player.c+1);
+                player.c = Math.min(cols-1, player.c+1);playStep(); // suono dei passi del robot
             }
             else if(action==='moveLeft' || action==='L'){
                 if(orientation!=='W'){ await wrongOrientation(startR,startC,startOrientation); return; }
-                player.c = Math.max(0, player.c-1);
+                player.c = Math.max(0, player.c-1);playStep(); // suono dei passi del robot
             }
             else if(action==='moveUp' || action==='U'){
                 if(orientation!=='N'){ await wrongOrientation(startR,startC,startOrientation); return; }
-                player.r = Math.max(0, player.r-1);
+                player.r = Math.max(0, player.r-1);playStep(); // suono dei passi del robot
             }
             else if(action==='moveDown' || action==='D'){
                 if(orientation!=='S'){ await wrongOrientation(startR,startC,startOrientation); return; }
-                player.r = Math.min(rows-1, player.r+1);
+                player.r = Math.min(rows-1, player.r+1);playStep(); // suono dei passi del robot
             }
             else if(action==='jump' || action==='J'){
                 if(orientation!=='E'){ await wrongOrientation(startR,startC,startOrientation); return; }
-                player.c = Math.min(cols-1, player.c+1);
+                player.c = Math.min(cols-1, player.c+1);playStep(); // suono dei passi del robot
             }
             else if(action==='rotR' || action==='RR') rotate('R');
             else if(action==='rotL' || action==='RL') rotate('L');
             else if(action==='destroyTrap') await destroyTrapStep();
 
             updatePlayer();
+			//playStep(); // suono dei passi del robot
             await sleep(350);
 
             // Controllo immediato della cella
@@ -1130,7 +1152,7 @@ document.getElementById('btnLevel1') && document.getElementById('btnLevel1').add
   document.getElementById('level3').style.display='none';
   document.getElementById('targetWord').style.display='inline';
   document.getElementById('storyText').style.display='none';
-  document.getElementById('titleStatic').textContent = "Costruisci la parola:";
+  document.getElementById('titleStatic').textContent = "(L1) Costruisci la parola:";
   resetGame();
 
   resetTitle();
@@ -1145,7 +1167,7 @@ document.getElementById('btnLevel2') && document.getElementById('btnLevel2').add
   document.getElementById('level3').style.display='none';
   document.getElementById('targetWord').style.display='inline';
   document.getElementById('storyText').style.display='none';
-  document.getElementById('titleStatic').textContent = "Costruisci la parolla:";
+  document.getElementById('titleStatic').textContent = "(L2)Costruisci la parola:";
   resetGame();
 
   resetTitle();
@@ -1158,7 +1180,7 @@ document.getElementById('btnLevel3')?.addEventListener('click', () => {
     document.getElementById('level2').style.display='none';
     document.getElementById('targetWord').style.display='none';
     document.getElementById('storyText').style.display='inline';
-    document.getElementById('titleStatic').textContent = "ricostruisci la sequenza:";
+    document.getElementById('titleStatic').textContent = "(L3) ricostruisci la sequenza:";
 
     // pulisce sequenza precedente
     clearGridForLevel3();   
@@ -1551,6 +1573,7 @@ async function runLevel4Path(path) {
         player.r = target.y;
         player.c = target.x;
         updatePlayer();
+		playStep(); // 👣; // suono dei passi del robot
         await sleep(350);
 
         // controlla se è sulla cella corretta del percorso
@@ -1603,32 +1626,41 @@ async function moveRobot(action) {
     // ---- MOVIMENTI ----
     if (action === 'R') {
         player.c = Math.min(cols - 1, player.c + 1);
+        updatePlayer();
+        playStep();
     }
     else if (action === 'L') {
         player.c = Math.max(0, player.c - 1);
+        updatePlayer();
+        playStep();
     }
     else if (action === 'U') {
         player.r = Math.max(0, player.r - 1);
+        updatePlayer();
+        playStep();
     }
     else if (action === 'D') {
         player.r = Math.min(rows - 1, player.r + 1);
+        updatePlayer();
+        playStep();
     }
 
     // ---- SALTO ----
     else if (action === 'J') {
         player.c = Math.min(cols - 1, player.c + 2);
+        updatePlayer();
+        playStep();
     }
 
     // ---- ROTAZIONI ----
     else if (action === 'RL') {
-        rotate('L');
+        rotate('L');  // rotate() gestisce già il playTurn()
     }
     else if (action === 'RR') {
-        rotate('R');
+        rotate('R');  // rotate() gestisce già il playTurn()
     }
 
-    // aggiorna grafica robot
-    updatePlayer();
+    // Aggiorna direzione robot e grafica generale
     updateRobotDirection();
 
     await new Promise(resolve => setTimeout(resolve, 400));
@@ -1719,7 +1751,7 @@ document.getElementById('btnLevel4')?.addEventListener('click', () => {
     document.getElementById('storyText').style.display = 'inline';
 
     const title = document.getElementById('titleStatic');
-    title.textContent = "🤖 Aiuta il robot a non sbagliare percorso:";
+    title.textContent = "L4 🤖 Aiuta il robot a non sbagliare percorso:";
     
     // Aggiunge una classe speciale per lo stile
     title.classList.add('level4-title');	
